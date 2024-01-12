@@ -1,4 +1,4 @@
-##' @describeIn statevec Create the state vector
+##' @describeIn pc_statevec Create the state vector
 ##' @export
 new_pc_statevec <- function(state, statenames = names(state), t = 0) {
   if (!is.null(statenames) && (length(state) != length(statenames))) {
@@ -9,7 +9,7 @@ new_pc_statevec <- function(state, statenames = names(state), t = 0) {
             class = "statevec")
 }
 
-##' @describeIn statevec Validate the state vector
+##' @describeIn pc_statevec Validate the state vector
 ##' @export
 validate_pc_statevec <- function(statevec) {
   if (any(is.na(statevec) | (statevec < 0))) {
@@ -25,7 +25,6 @@ validate_pc_statevec <- function(statevec) {
 ##' Create a named vector representing the state of the population at a given
 ##' point in time
 ##'
-##' .. content for \details{} ..
 ##' @title Create a state vector for the population model
 ##' @param state Number of individuals in each state
 ##' @param statenames Name of each state (e.g. lifestages)
@@ -42,10 +41,14 @@ pc_time.statevec <- function(state) {
 
 new_pc_transition <- function(fn, timestep) {
 
+
 }
 
 validate_pc_transition <- function(tr) {
 
+
 }
 
-pc_transition <- function()
+pc_transition <- function() {
+
+}
