@@ -58,6 +58,7 @@ stilly_net <- network.initialize(n = nrow(stilly))
 add.vertices(stilly_net, )
 add.edges(stilly_net, stilly_edges$from, stilly_edges$to)
 
+## From Beechie et al. 2023 (Stillaguamish and Snohomish HARP model description), page 39
 beverton_holt <- function(n, prod, cap) {
    n * prod / (1 + n * prod / cap)
 }
@@ -88,3 +89,71 @@ stg_pars <- tribble(
 "fall_chinook", "Summer"        , "Capacity"    , 278121.5919,
 "fall_chinook", "Summer"        , "Productivity", 0.645911874,
 )
+
+stilly_prespawners <- function(pop) {
+  prespawners <- 0.05 * pop[2] + 0.34 * pop[3] + 0.92 * pop[4] + pop[5]
+}
+
+stilly_spawners <- function(pop) {
+  prespawners <- stilly_prespawners(pop)
+  0.696937 * prespawners
+}
+
+
+stilly_sim <- function(pop) {
+  ## Contributions to spawning
+  prespawners <- stilly_prespawners(pop)
+  ## Prespawn mortality
+  spawners <- 0.696937 * prespawners
+  ## Egg production
+  eggs <- beverton_holt(spawners / 2, 5400, 152859370)
+  ## Survival to fry
+  fry <- density_independent(eggs, 0.548651)
+  ## Survival to parr/subyearling rearing
+  parr <- density_independent(fry, 0.302312)
+  ## Transition to first marine year
+  age00 <- beverton_holt(parr, 0.302312, 1682111.1)
+  age01 <- density_independent(pop[1], 0.6)
+  age02 <- density_independent(pop[2] * (1 - 0.05), 0.7)
+  age03 <- density_independent(pop[3] * (1 - 0.34), 0.8)
+  age04 <- density_independent(pop[4] * (1 - 0.92), 0.9)
+
+  structure(c(age00, age01, age02, age03, age04, use.names = FALSE),
+            prespawners = prespawners,
+            spawners = spawners,
+            eggs = eggs,
+            fry = fry,
+            parr = parr)
+}
+
+## SAR is 0.00367
+## pop0 <- c(age01 = 2e4, age02 = 2e4, age03 = 1e3, age04 = 1e3, age05 = 1e3)
+pop0 <- rep(20e3, 5)
+stilly_sim(pop0)
+
+pop <- matrix(NA, nrow = 5, ncol = 300)
+pop[, 1] <- pop0
+for (t in 2:300) {
+  pop[, t] <- stilly_sim(pop[, t - 1])
+}
+pop[, 300]
+stilly_spawners(pop[, 300])
+
+pop2 <- list()
+pop2[[1]] <- pop0
+for (t in 2:300) {
+  pop2[[t]] <- stilly_sim(pop2[[t - 1]])
+}
+
+pop2[[300]]
+
+curve(beverton_holt(x, 0.0302312, 168111.1) / x, from = 0, to = 168111.1 * 2)
+
+curve(0.03 * x / (1 + x / 168e3) / x, from = 0, to = 168e3 * 2)
+
+bh2 <- function(pop, r, K) {
+  M <- K / (r - 1)
+  r * pop / (1 + pop / M)
+}
+
+curve(bh2(x, 0.3, 168e3) / x, from = 0, to = 168e3)
