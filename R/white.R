@@ -4,8 +4,8 @@ white_sim <- function(pop) {
   fecundity <- c(4600, 5700, 6600)
   eggs <- sum(fecundity * spawners / 2)
   fry <- eggs * 0.441
-  fry_mig <- 0.88 * 0.16 * 0.599 * 0.803 * 0.356 * fry
-  parr_mig <- 0.88 * 0.72 * 0.599 * 0.240 * 0.563 * fry
+  fry_mig <-  0.16 * 0.599 * 0.803 * 0.356 * fry
+  parr_mig <-  0.72 * 0.599 * 0.240 * 0.563 * fry
   yr_mig <- 0.12 * 0.599 * 0.596 * 0.604 * 0.959 * fry
   age00 <- 0.356 * fry_mig + 0.563 * parr_mig
   age01 <- 0.757 * pop[1] + 0.082 * pop[2]
