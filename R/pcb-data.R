@@ -25,8 +25,8 @@ growth_qreg <- function(pcb) {
   pmax(0.15 + 0.0938 * log10(pcb), 0)
 }
 
-f(d) 5 [exp(21.69 1. The0.0329d)] / [1 1 exp(21.69 1 0.0329d)
-growth_surv <- function()
+## f(d) 5 [exp(21.69 1. The0.0329d)] / [1 1 exp(21.69 1 0.0329d)
+## growth_surv <- function()
 
 
 puy_pcb <- chk_pcb |>
@@ -40,11 +40,16 @@ puy_pcb_dens <- density(puy_pcb$pcbs)
 plot(puy_pcb_dens, ylim = c(0, 0.05))
 hist(puy_pcb$pcbs, probability = TRUE, add = TRUE, color = NA)
 
-ld <- logdensity(puy_pcb$pcbs, bw = 1e-1, from = 1e-7, to = 500e-3)
+ld <- logdensity(puy_pcb$pcbs, from = 1e-7, to = 500e-3)
 
 hist(puy_pcb$pcbs, breaks = seq(0, 200e-3, 5e-3), probability = TRUE)
 lines(ld)
 ## lines(puy_pcb_dens)
+##
+
+plot(ld, xlim = c(0, 0.2))
+hist(puy_pcb$pcbs, breaks = seq(0, 200e-3, 5e-3), probability = TRUE, add = TRUE)
+abline(v = 0.1, lty = "dashed")
 
 ld_fun <- approxfun(ld)
 
@@ -78,3 +83,17 @@ curve(dnorm(x, mean(boot_sum), sd(boot_sum)), add = TRUE)
 plot(boot_ld[[1]], col = rgb(0, 0, 0, 0.1), ylim = c(0, 100))
 walk(boot_ld[2:200], lines, col = rgb(0, 0, 0, 0.1))
 abline(v= 0.1, lty = "dashed")
+
+chk_pcb |>
+  filter(lifestage == "juvenile") |>
+  mutate() |>
+ggplot(aes(x = pcbs)) +
+  geom_histogram(breaks = seq(0, 175, 5)) +
+  ## geom_density(bounds = c(0, Inf)) +
+  geom_vline(xintercept = 100, linetype = "dashed") +
+  facet_wrap(~ river, nrow = 2, scales = "free_y") +
+  scale_y_continuous(expand = expansion(c(0, 0.05), 0)) +
+  scale_x_continuous(expand = expansion(0, 0)) +
+  labs(x = "Total PCBs (ng/g wet weight)",
+       y = "Number of observations")
+ggsave("PCB_obs.png")
