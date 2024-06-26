@@ -11,7 +11,26 @@
 ##' @author John Best
 ##' @export
 beverton_holt <- function(n, prod, cap) {
-   n * prod / (1 + n * prod / cap)
+  n * prod / (1 + n * prod / cap)
+}
+
+##' Will always return zero for productivity less than or equal to one to
+##' prevent negative equilbria. Otherwise the equilibrium is \code{cap * (prod -
+##' 1) / prod}.
+##'
+##' @title Calculate the equilibrium population of a population with
+##'   Beverton-Holt dynamics
+##' @param prod Intrinsic productivity
+##' @param cap Capacity
+##' @return
+##' @author John Best
+beverton_holt_eq <- function(prod, cap) {
+  if (prod <= 1) {
+    eq <- 0
+  } else {
+    eq <- cap * (prod - 1) / prod
+  }
+  eq
 }
 
 ##' Convenience function to access the \code{"spawners"} attribute
