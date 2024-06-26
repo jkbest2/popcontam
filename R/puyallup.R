@@ -14,6 +14,7 @@ puyallup_sim <- function(pop) {
 
   structure(c(age00, age01, age02, age03, age04),
             names = paste0("age0", 0:4),
+            oceanadults = age01 + age02 + age03 + age04,
             prespawners = prespawners,
             spawners = spawners,
             fry = fry,

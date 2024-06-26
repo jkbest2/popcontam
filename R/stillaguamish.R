@@ -44,6 +44,7 @@ stilly_sim <- function(pop, nearshore_surv_adj = 1) {
 
   structure(c(age00, age01, age02, age03, age04, use.names = FALSE),
             names = paste0("age0", 0:4),
+            oceanadults = age01 + age02 + age03 + age04,
             prespawners = unname(prespawners),
             spawners = unname(spawners),
             eggs = unname(eggs),
