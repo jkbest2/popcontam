@@ -17,12 +17,23 @@ beverton_holt <- function(n, prod, cap) {
 ##' Convenience function to access the \code{"spawners"} attribute
 ##'
 ##' @title Get number of spawners
-##' @param pop Population vector with "spawners" attribute
+##' @param pop Population vector with \code{"spawners"} attribute
 ##' @return Number of spawners
 ##' @author John Best
 ##' @export
 get_spawners <- function(pop) {
   attr(pop, "spawners")
+}
+
+##' Convenience function to access \code{"oceanadults"} attribute, which
+##' represents available food for SRKWs
+##'
+##' @title Get number of ocean adults
+##' @param pop Population vector with \code{"oceanadults"} attribute
+##' @author John Best
+##' @export
+get_oceanadults <- function(pop) {
+  attr(pop, "oceanadults")
 }
 
 ##' Iterates lifecycle models to find an equilibrium population. Currently works

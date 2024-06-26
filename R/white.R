@@ -15,6 +15,7 @@ white_sim <- function(pop) {
 
   structure(c(yr_mig, age00, age01, age02, age03, age04),
             names = c("yr_mig", paste0("age0", 0:4)),
+            oceanadults = age01 + age02 + age03 + age04,
             prespawners = prespawners,
             spawners = spawners,
             eggs = eggs,
