@@ -86,7 +86,7 @@ abline(v= 0.1, lty = "dashed")
 
 chk_pcb |>
   filter(lifestage == "juvenile") |>
-  mutate() |>
+  mutate(river = ifelse(river == "Puyallup", "Puyallup/White", river)) |>
 ggplot(aes(x = pcbs)) +
   geom_histogram(breaks = seq(0, 175, 5)) +
   ## geom_density(bounds = c(0, Inf)) +
@@ -94,6 +94,7 @@ ggplot(aes(x = pcbs)) +
   facet_wrap(~ river, nrow = 2, scales = "free_y") +
   scale_y_continuous(expand = expansion(c(0, 0.05), 0)) +
   scale_x_continuous(expand = expansion(0, 0)) +
-  labs(x = "Total PCBs (ng/g wet weight)",
-       y = "Number of observations")
+  labs(x = "Total PCBs (ng/g ww)",
+       y = "Number of observations") +
+  theme_bw()
 ggsave("PCB_obs.png")
