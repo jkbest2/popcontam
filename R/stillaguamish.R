@@ -54,7 +54,7 @@ stilly_sim <- function(pop, nearshore_surv_adj = 1) {
             delta_fry = unname(delta_fry))
 }
 
-growth_morts <- 0.12
+## growth_morts <- 0.12
 
 ### Stillaguamish no effects
 source("R/utils.R")
@@ -68,7 +68,7 @@ oa_0 <- get_oceanadults(stilly_0)
 smolts <- attr(stilly_0, "parr_mig") + attr(stilly_0, "fry_mig")
 sar_0 <- get_spawners(stilly_0) / smolts
 ## Back-calculate July size from Duffy & Beauchamp 2011
-inv_db2011_survival(sar0)
+inv_db2011_survival(sar_0)
 
 ## Now look at just parr migrants. Assuming that smolts are counted/estimated
 ## above the estuary, so the total number is parr_mig + fry_mig. All parr
@@ -128,7 +128,7 @@ tibble(
   pcb_ug = pcb_ng / 1000,
   `Direct Mortality` = 0.1702 + 0.221 * log10(pcb_ug),
   `Growth Restriction` = 0.15 + 0.0938 * log10(pcb_ug),
-  noeff = ifelse(pcb >= 1, 1, 0.3)
+  noeff = ifelse(pcb_ug >= 1, 1, 0.3)
 ) |>
   pivot_longer(cols = c(`Growth Restriction`, `Direct Mortality`), names_to = "aop", values_to = "effect") |>
   ggplot(aes(x = pcb_ng, y = effect)) +
