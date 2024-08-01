@@ -86,6 +86,12 @@ inv_db2011_survival(sar_0)
 ## fry_size <- inv_db2011_survival(fry_sar)
 
 db2011_survival <- function(mass) {
+  ## The Duffy and Beauchamp survival regression predicts percent survival. I
+  ## prefer to work with survival rates, which are the percent divided by 100.
+  ## Because log10(0.01) = -2, I included an extra -2 in the intercept of the
+  ## regression. This is why the Duffy and Beauchamp intercept is -1.071 but
+  ## we're using -3.071 here. Given that we're using relative changes in this
+  ## survival it won't actually make a difference.
   l <- -3.071 + 0.041 * mass
   10^l
 }
@@ -94,9 +100,6 @@ inv_db2011_survival <- function(survival) {
   ls <- log(survival, 10)
   (ls + 3.071) / 0.041
 }
-
-
-
 
 dexposure_fun <- function(means, sdlogs, props) {
   function(xs) {
