@@ -134,3 +134,85 @@ tibble(
   theme_bw() +
   theme(legend.position = "bottom")
 ggsave("figs/transition-plot.png", width = 6.5, height = 4.5)
+
+
+source("R/fish-size.R") # Get data from D&B2011
+
+direct_mortality <- function(pcb_ug) {
+  pmax(0.1702 + 0.221 * log10(pcb_ug), 0)
+}
+## FIXME This is *only* the growth effect, *does not include* the translation to survival yet!
+growth_restriction <- function(pcb_ug) {
+  pmax(0.15 + 0.0938 * log10(pcb_ug), 0)
+}
+db2011_survival <- function(mass) {
+  l <- -3.071 + 0.041 * mass
+  10^l
+}
+growth_to_mort <- function(pcb, base_size = db_size$july_mass, noexp_surv = db_size$pred_surv) {
+  ## Calculate the expected reduction in size given exposure
+  gred <- growth_restriction(pcb)
+  exp_mass <- (1 - gred) * base_size
+  1 - db2011_survival(exp_mass) / noexp_surv
+}
+
+## Example combined effects plot
+combo_eff_df <- tibble(
+  pcb_ng = seq(0, 1.025e3, length.out = 2049),
+  ## pcb_ng = 10^seq(1, 6, length.out = 1025),
+  pcb_ug = pcb_ng / 1000,
+  `Direct Mortality` = direct_mortality(pcb_ug),
+  `Growth Restriction` = growth_to_mort(pcb_ug),
+  `Combined Naive` = `Direct Mortality` + `Growth Restriction`,
+  `Combined Conditional` = `Direct Mortality` + (1 - `Direct Mortality`) * `Growth Restriction`
+)
+
+combo_ex <- tibble(
+  pcb_ng = 500,
+  pcb_ug = pcb_ng / 1000,
+  `Direct Mortality` = direct_mortality(pcb_ug),
+  `Growth Restriction` = growth_to_mort(pcb_ug),
+  `Combined Naive` = `Direct Mortality` + `Growth Restriction`,
+  `Combined Conditional` = `Direct Mortality` + (1 - `Direct Mortality`) * `Growth Restriction`
+)
+
+combo_eff_df |>
+  pivot_longer(cols = c(`Direct Mortality`, `Combined Naive`, `Combined Conditional`),
+               names_to = "aop", values_to = "effect") |>
+  mutate(naive = ifelse(grepl("Naive", aop), TRUE, FALSE))  |>
+  ggplot(aes(x = pcb_ng, y = effect, color = aop)) +
+  annotate("ribbon", x = c(0, 100), ymin = 0, ymax = Inf, fill = "gray50", alpha = 0.5) +
+  geom_line() +
+  annotate("errorbar",
+           x = combo_ex$pcb_ng - 5,
+           ymin = 0, ymax = combo_ex$`Direct Mortality`, width = 10) +
+  annotate("text",
+           x = combo_ex$pcb_ng - 15, y = combo_ex$`Direct Mortality` / 2,
+           label = paste0("Direct Mortality\n", scales::percent(combo_ex$`Direct Mortality`, 0.1)),
+           hjust = "right")+
+  annotate("errorbar",
+           x = combo_ex$pcb_ng - 5,
+           ymin = combo_ex$`Direct Mortality`, ymax = combo_ex$`Combined Naive`, width = 10) +
+  annotate("text",
+           x = combo_ex$pcb_ng - 15, y = mean(c(combo_ex$`Direct Mortality`, combo_ex$`Combined Naive`)),
+           label = paste0("Growth Restriction\n", scales::percent(combo_ex$`Growth Restriction`, 0.1)),
+           hjust = "right")+
+  annotate("errorbar",
+           x = combo_ex$pcb_ng + 5,
+           ymin = 0, ymax = combo_ex$`Combined Conditional`, width = 10) +
+  annotate("text",
+           x = combo_ex$pcb_ng + 15,
+           y = combo_ex$`Combined Conditional` / 2 + 0.035,
+           label = paste0("Combined\n", scales::percent(combo_ex$`Combined Conditional`, 0.1), " = ",
+                          scales::percent(combo_ex$`Direct Mortality`, 0.1), " + (1 - ",
+                          scales::percent(combo_ex$`Direct Mortality`, 0.1), ") x ",
+                          scales::percent(combo_ex$`Growth Restriction`, 0.1)),
+           hjust = "left") +
+  labs(x = "Tissue PCB Concentration (ng/g ww)", y = "Effect",
+       title = "Growth-selective mortality occurs after direct mortality") +
+  scale_x_continuous(limits = c(0, NA), breaks = seq(0, 1000, 200), labels = scales::comma, expand = expansion()) +
+  scale_y_continuous(limits = c(0, NA), labels = scales::percent, expand = expansion()) +
+  scale_color_discrete(guide = FALSE) +
+  ## facet_wrap(~ aop, ncol = 1) +
+  theme_bw()
+ggsave("figs/conditional-effects.png", width = 10, height = 6)
