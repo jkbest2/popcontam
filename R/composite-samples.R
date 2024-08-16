@@ -10,7 +10,7 @@ y2 <- convolve(d1, d2, type = "filter")
 plot(x, d1, type = "l")
 lines(x, y2)
 
-plot(seq(-8, 8, length.out = 2049), y2, type = 'l')
+plot(seq(-8, 8, length.out = 2049), y2, type = "l")
 lines(x, d1)
 
 s2 <- function(t) {
@@ -19,7 +19,7 @@ s2 <- function(t) {
 
 cv <- sapply(seq(-8, 8, length.out = 2049), s2)
 
-plot(seq(-8, 8, length.out = 2049), cv, type = 'l')
+plot(seq(-8, 8, length.out = 2049), cv, type = "l")
 lines(x, d1)
 lines(x, 2 * dnorm(2 * x, 0, sqrt(2)))
 
@@ -45,4 +45,6 @@ sdl <- 1
 y10 <- rnlnorm(10e3, n, ml, sdl)
 
 hist(y10, probability = TRUE)
-curve(dlnorm(x, mu_n(n, ml, sdl), sig_n(n, ml, sdl)), from = 0, to = 100e5, n = 1025, add = TRUE)
+curve(dlnorm(x, mu_n(n, ml, sdl), sig_n(n, ml, sdl)),
+  from = 0, to = 100e5, n = 1025, add = TRUE
+)
