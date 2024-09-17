@@ -95,16 +95,16 @@ mort_qreg_lipid <- function(pcb) {
 
 pcb_data <- read.csv("data/PCB_Puyallup_monitoring_data.csv")
 
-dexposure_fun_2 <- function(concentrations) {  
+dexposure_fun_2 <- function(concentrations) {   ##not sure i need to do this if I have a pre-generated exposure
   means <- log(concentrations)  
   sdlogs <- rep(0.5, length(concentrations))  # Set a default standard deviation value  
   props <- rep(1/length(concentrations), length(concentrations))  # Equal proportions for each concentration  
-    
-  function(xs) {  
+
+  function(xs) {
     vapply(xs, \(x) sum(props * dlnorm(x, means, sdlogs)),  
-           0.0)  
-  }  
-}  
+           0.0)
+  }
+}
   
 # Wet weight PCB concentrations  
 concentrations <- pcb_data$pcb_uggwet
@@ -124,7 +124,7 @@ dexposure_lw_1 <- dexposure_fun_2(concentrations_lw_1)
 ## Calculate direct mortality rate based on the exposure distribution and the
 ## Berninger and Tillitt direct mortality relationship
 morts_ww <- integrate(\(pcb) dexposure_ww(pcb) * mort_qreg(pcb), lower = 0, upper = Inf)$value  
-morts_ww  
+morts_ww
 ## Apply direct mortality to the to-ocean 0.0 transition (decreasing survival)
 ## ug/g wet weight
 puyallup_mort <- eq_pop(puyallup_sim, nearshore_surv_adj = 1 - morts_ww, pop0 = rep(1000, 5))
@@ -160,4 +160,3 @@ red_mort <- 1 - (oa_0 - oa_mort) / oa_0
 red_mort
 Percent_spawner_reduction <- (spawner_mort - spawners)/spawners * 100
 Percent_spawner_reduction
-
