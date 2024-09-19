@@ -22,8 +22,9 @@ simulate_individual_concentrations <- function(geom_mean, variance, n) {
 data <- data %>%
   rowwise() %>%
   mutate(
-    corrected_variance = ifelse(Composite_Count > 1, log(1 + (overall_variance / Composite_Count)), 0),  # Apply correction if Composite_Count > 1
-    geom_mean_pooled = ifelse(Composite_Count > 1, exp(log_pcb_uggwet - (corrected_variance / 2)), pcb_uggwet)  # No correction for individual samples
+    corrected_variance = ifelse(Composite_Count > 1, log(1 + (overall_variance / Composite_Count)), 0),  # Apply correction if Composite_Count > 1;  variance shrinks when more samples are composited
+    geom_mean_pooled = ifelse(Composite_Count > 1, exp(log_pcb_uggwet - (corrected_variance / 2)), pcb_uggwet)  # Caudill's correction  is applied as pooled result may overestimate the average concentration across individuals. Correcting for this ensures that the pooled geometric mean more accurately represents the individual-level mean.
+    #adjusting the pooled geometric mean to more closely represent what the individual sample concentrations would have been without the bias introduced by compositing.
   ) %>%
   ungroup()
 
