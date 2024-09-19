@@ -1,0 +1,52 @@
+# Load necessary libraries
+library(dplyr)
+library(tidyr)
+
+# Read the data
+data <- read.csv("C:/Users/faberm/Desktop/Salmon Population Modelling/popcontam/data/PCB_Puyallup_monitoring_data.csv")
+
+# Log-transform the 'pcb_uggwet' column using natural log
+data <- data %>% mutate(log_pcb_uggwet = log(pcb_uggwet))  
+
+# Calculate the overall geometric mean and variance of log-transformed concentrations
+overall_geom_mean <- exp(mean(data$log_pcb_uggwet, na.rm = TRUE))  # Geometric mean
+overall_variance <- var(data$log_pcb_uggwet, na.rm = TRUE)  # Variance of log-transformed values
+
+# Define the function to simulate individual concentrations
+simulate_individual_concentrations <- function(geom_mean, variance, n) {
+  # Simulate from log-normal distribution
+  rlnorm(n, meanlog = log(geom_mean), sdlog = sqrt(variance))
+}
+
+# Apply the correct method based on Composite_Count to account for bias when pooling samples
+data <- data %>%
+  rowwise() %>%
+  mutate(
+    corrected_variance = ifelse(Composite_Count > 1, overall_variance, 0),  # Use original variance if no correction
+    geom_mean_pooled = ifelse(Composite_Count > 1, exp(log_pcb_uggwet - (corrected_variance / 2)), pcb_uggwet)  # No correction for individual samples
+  ) %>%
+  ungroup()
+
+
+# Generate individual concentrations
+set.seed(123)  # For reproducibility
+
+data <- data %>%
+  rowwise() %>%
+  mutate(
+    individual_concentrations = list(simulate_individual_concentrations(geom_mean_pooled, corrected_variance, Composite_Count))
+  ) %>%
+  ungroup()
+
+# Unnest the 'individual_concentrations' column to create a new dataframe with only the concentrations
+individual_concentrations_df <- data %>%
+  unnest(individual_concentrations) %>%
+  select(individual_concentration = individual_concentrations)
+
+# View the resulting dataframe
+head(individual_concentrations_df)
+
+
+library(writexl)
+write_xlsx(data, "PCB_Puyallup_nobiascorrection.xlsx")
+write_xlsx(individual_concentrations_df, "PCB_Conc_Puyallup_nobiascorrection.xlsx")
