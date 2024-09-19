@@ -3,7 +3,7 @@ library(dplyr)
 library(tidyr)
 
 # Read the data
-data <- read.csv("C:/Users/faberm/Desktop/Salmon Population Modelling/popcontam/data/PCB_Puyallup_monitoring_data.csv")
+data <- read.csv("data/PCB_Puyallup_monitoring_data.csv")
 
 # Log-transform the 'pcb_uggwet' column using natural log
 data <- data %>% mutate(log_pcb_uggwet = log(pcb_uggwet))  
@@ -44,8 +44,3 @@ individual_concentrations_df <- data %>%
 
 # View the resulting dataframe
 head(individual_concentrations_df)
-
-
-library(writexl)
-write_xlsx(data, "PCB_Puyallup.xlsx")
-write_xlsx(individual_concentrations_df, "PCB_Conc_Puyallup.xlsx")
