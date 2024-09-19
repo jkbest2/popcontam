@@ -1,4 +1,4 @@
-SAMPLE_ID,Study_ID,Latitude,Longitude,Species,RiverSystem,COMPOUND,UNIT,CONC_FOUND (ng/g ww),Sampling Date,% Lipids,pcb_uggwet,pcb_ugglw_sample,pcb_ugglw_1,effect-mort ww,effect-mort lipid-sample specific,effect-mort lipid - 1%,Number of Individuals in the composite
+SAMPLE_ID,Study_ID,Latitude,Longitude,Species,RiverSystem,COMPOUND,UNIT,CONC_FOUND (ng/g ww),Sampling Date,% Lipids,pcb_uggwet,pcb_ugglw_sample,pcb_ugglw_1,effect-mort ww,effect-mort lipid-sample specific,effect-mort lipid - 1%,Composite_Count
 21CBW02-TW_W3552,WDFW_LEGACY 2021,47.2781,-122.47245,juvenile Chinook,PUYALLUP,TotalPCBs_NOAA,ng/g (wet),110,4/23/2021,0.72,0.11,15.27777778,11,-4.165221658,13.63773017,10.48477834,1
 21WHY03-TW_W02,WDFW_LEGACY 2021,47.27708,-122.39553,juvenile Chinook,PUYALLUP,TotalPCBs_NOAA,ng/g (wet),170,4/14/2021,1.2,0.17,14.16666667,17,0.012921162,12.91301562,14.66292116,2
 13HYLR-TW1506,WDFW_LEGACY 2013,47.281161,-122.397017,juvenile Chinook,PUYALLUP,TotalPCBs_NOAA,ng/g (wet),170,8/14/2013,1.219557318,0.17,13.93948423,17,0.012921162,12.75785218,14.66292116,1
