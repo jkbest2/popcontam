@@ -57,15 +57,18 @@ gamma_data <- function(contam, conc_col) {
   )
 }
 
-data_g <- gamma_data(contam, pcb_ug_lw1)
+data_g <- gamma_data(contam, pcb_ug_ww)
+write_rds(data_g, "data/pcb_ww_g_data.rds")
 
-fit_g <- stan("gamma-exposure.stan",
+fit_g <- stan("inst/gamma-exposure.stan",
   data = data_g,
   chains = 4,
   iter = 2000
 )
+write_rds(fit_g, "data/pcb_ww_g_fit.rds")
 
 post_g <- as_draws_rvars(fit_g)
+write_rds(post_g, "data/pcb_ww_g_post.rds")
 
 ## This plot shows that the gamma model is not accounting for enough low values;
 ## this also means that it may be
@@ -92,9 +95,27 @@ ci_g |>
   geom_lineribbon(aes(ymin = .lower, ymax = .upper), fill = "skyblue") +
   coord_cartesian(xlim = c(0, 0.2))
 
+bind_rows(
+  mutate(ci_g, model = "gamma"),
+  mutate(ci_ln, model = "lognormal")
+) |>
+  ggplot(aes(x = x, y = y, color = model, fill = model)) +
+  geom_lineribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.5) +
+  scale_x_continuous(expand = expansion(c(0, 0.01))) +
+  scale_y_continuous(limits = c(0, 90), expand = expansion(c(0, 0.05)))
+
+
 ci_g |>
   ggplot(aes(x = x, y = y)) +
   geom_lineribbon(aes(ymin = .lower, ymax = .upper), fill = "skyblue") +
+  coord_cartesian(xlim = c(0.1, 0.3), ylim = c(0, 5))
+
+bind_rows(
+  mutate(ci_g, model = "gamma"),
+  mutate(ci_ln, model = "lognormal")
+) |>
+  ggplot(aes(x = x, y = y, color = model, fill = model)) +
+  geom_lineribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.5) +
   coord_cartesian(xlim = c(0.1, 0.3), ylim = c(0, 5))
 
 ## Mapping the observations shows (unsurprisingly) that the higher observations

@@ -1,0 +1,265 @@
+---
+title: "Population exposures from composite samples"
+author: John Best
+format: beamer
+---
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+## | echo: false
+## | message: false
+## | warning: false
+library(tidyverse)
+library(rstan)
+library(posterior)
+library(bayesplot)
+library(ggdist)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE)
+```
+
+## Distributions of means
+
+### Gamma
+
+$$ y_i \sim \operatorname{gamma}(k, \theta)$$
+
+$$\frac{1}{N}\sum_{i=1}^N y_i \sim \operatorname{gamma}\left(N k, \frac{N}{\theta}\right)$$
+
+## Distributions of means
+
+### Gamma
+
+```{r}
+dmeangamma <- function(x, n, shape, rate, log = FALSE) {
+  dgamma(x, n * shape, n * rate, log = log)
+}
+
+curve(dgamma(x, 2, 1), from = 0, to = 8, n = 1025, ylim = c(0, 1))
+curve(dmeangamma(x, 2, 2, 1), from = 0, to = 8, n = 1025, add = TRUE)
+curve(dmeangamma(x, 3, 2, 1), from = 0, to = 8, n = 1025, add = TRUE)
+curve(dmeangamma(x, 4, 2, 1), from = 0, to = 8, n = 1025, add = TRUE)
+curve(dmeangamma(x, 5, 2, 1), from = 0, to = 8, n = 1025, add = TRUE)
+curve(dmeangamma(x, 6, 2, 1), from = 0, to = 8, n = 1025, add = TRUE)
+curve(dmeangamma(x, 7, 2, 1), from = 0, to = 8, n = 1025, add = TRUE)
+curve(dmeangamma(x, 8, 2, 1), from = 0, to = 8, n = 1025, add = TRUE)
+curve(dmeangamma(x, 9, 2, 1), from = 0, to = 8, n = 1025, add = TRUE)
+curve(dmeangamma(x, 10, 2, 1), from = 0, to = 8, n = 1025, add = TRUE)
+```
+
+## Distributions of means
+
+### Log-normal
+
+$$y_i \sim \operatorname{log\ normal}(\mu, \sigma^2)$$
+
+
+$$\frac{1}{N}\sum_{i=1}^N y_i \stackrel{\text{approx}}{\sim} \operatorname{log\ normal}\left(\mu_{(N)}, \sigma^2_{(N)}\right)$$
+
+$$\begin{aligned}
+\sigma^2_{(N)} &= \log\left(\frac{\exp(\sigma^2) - 1)}{N} + 1\right)\\
+\mu_{(N)} &= \mu + \frac{\sigma}{2} - \frac{\sigma_{(N)}}{2}
+\end{aligned}$$
+
+## Distributions of means
+
+### Log-normal
+
+```{r}
+meanlnorm_pars <- function(n, pop_mu, pop_sig) {
+  pop_sig2 <- pop_sig^2
+  mean_sig <- sqrt(log(1 / n * (exp(pop_sig2) - 1) + 1))
+  mean_mu <- pop_mu + pop_sig / 2 - mean_sig / 2
+  c(meanlog = mean_mu, meansd = mean_sig)
+}
+
+meanlnorm_curve <- function(n, pop_mu, pop_sig, ...) {
+  pars <- meanlnorm_pars(n, pop_mu, pop_sig)
+  curve(dlnorm(x, pars[1], pars[2]), ...)
+}
+
+p <- meanlnorm_pars(1, 0, 1)
+curve(dlnorm(x, p[1], p[2]), from = 0, to = 8, n = 1025, ylim = c(0, 0.85))
+for (n in 2:10) {
+  p <- meanlnorm_pars(n, 0, 1)
+  curve(dlnorm(x, p[1], p[2]), from = 0, to = 8, n = 1025, add = TRUE)
+}
+```
+
+## Puyallup data
+
+```{r}
+contam <- read_csv(
+  "../data/PCB_Puyallup_monitoring_data.csv",
+  col_types =
+    cols(
+      SAMPLE_ID = col_character(),
+      Study_ID = col_character(),
+      Latitude = col_double(),
+      Longitude = col_double(),
+      Species = col_character(),
+      RiverSystem = col_character(),
+      COMPOUND = col_character(),
+      UNIT = col_character(),
+      `CONC_FOUND (ng/g ww)` = col_skip(),
+      `Sampling Date` = col_date(format = "%m/%d/%Y"),
+      `% Lipids` = col_double(),
+      pcb_uggwet = col_double(),
+      pcb_ugglw_sample = col_double(),
+      pcb_ugglw_1 = col_double(),
+      `effect-mort ww` = col_skip(),
+      `effect-mort lipid-sample specific` = col_skip(),
+      `effect-mort lipid - 1%` = col_skip(),
+      Composite_Count = col_double()
+    )
+) |>
+  rename(
+    id = SAMPLE_ID,
+    study = Study_ID,
+    latitude = Latitude,
+    longitude = Longitude,
+    species = Species,
+    river = RiverSystem,
+    compound = COMPOUND,
+    unit = UNIT,
+    date = `Sampling Date`,
+    pct_lipid = `% Lipids`,
+    pcb_ug_ww = pcb_uggwet,
+    pcb_ug_lw = pcb_ugglw_sample,
+    pcb_ug_lw1 = pcb_ugglw_1,
+    n_composite = Composite_Count,
+  )
+
+contam |>
+  ggplot(aes(x = pcb_ug_ww)) +
+  geom_histogram() +
+  facet_wrap(~n_composite) +
+  scale_y_continuous(breaks = seq(0, 10, 2)) +
+  labs(x = "PCB μg/g wet weight", y = "Count") +
+  theme_bw()
+```
+
+## Model fit
+
+### Posterior predictive check - Log normal
+
+```{r}
+data_ln <- read_rds("../data/pcb_ww_ln_data.rds")
+fit_ln <- read_rds("../data/pcb_ww_ln_fit.rds")
+post_ln <- read_rds("../data/pcb_ww_ln_post.rds")
+
+ppc_dens_overlay(data_ln$conc, as_draws_matrix(post_ln$conc_gen)[1:50, ]) +
+  xlim(c(0, 0.25)) +
+  labs(x = "PCB μg/g wet weight", y = "Density")
+```
+
+## Model fit
+
+### PIT residuals - Log normal
+
+```{r}
+## This seems to show that the PIT residuals don't fall outside the expected
+## envelope
+ppc_pit_ecdf(data_ln$conc, as_draws_matrix(post_ln$conc_gen)) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed")
+```
+
+## Model fit
+
+### Posterior predictive check - Gamma
+
+```{r}
+data_g <- read_rds("../data/pcb_ww_g_data.rds")
+fit_g <- read_rds("../data/pcb_ww_g_fit.rds")
+post_g <- read_rds("../data/pcb_ww_g_post.rds")
+
+ppc_dens_overlay(data_g$conc, as_draws_matrix(post_g$conc_post)[1:50, ]) +
+  xlim(c(0, 0.25)) +
+  labs(x = "PCB μg/g wet weight", y = "Density")
+```
+
+## Model fit
+
+### PIT residuals - Gamma
+
+```{r}
+## This seems to show that the PIT residuals don't fall outside the expected
+## envelope
+ppc_pit_ecdf(data_g$conc, as_draws_matrix(post_g$conc_post)) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed")
+```
+
+## Predicted population distribution
+
+```{r}
+x <- seq(0, 0.52, length = 1025)
+
+ci_ln <- as_draws_df(fit_ln) |>
+  select(.draw, pop_meanlog, pop_sdlog) |>
+  mutate(x = list(x)) |>
+  unnest(x) |>
+  mutate(y = dlnorm(x, pop_meanlog, pop_sdlog)) |>
+  group_by(x) |>
+  curve_interval(y, .width = 0.8)
+
+ci_g <- as_draws_df(fit_g) |>
+  select(.draw, shape, scale) |>
+  mutate(x = list(x)) |>
+  unnest(x) |>
+  mutate(y = dgamma(x, shape, scale = scale)) |>
+  group_by(x) |>
+  curve_interval(y, .width = 0.8)
+
+bind_rows(
+  mutate(ci_ln, model = "log normal"),
+  mutate(ci_g, model = "gamma")
+) |>
+  ggplot(aes(x = x, y = y, fill = model)) +
+  geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.4) +
+  geom_line() +
+  coord_cartesian(xlim = c(0, 0.21), ylim = c(0, 100), expand = FALSE) +
+  labs(x = "PCB μg/g wet weight", y = "Density") +
+  facet_wrap(~ model, ncol = 1) +
+  theme_minimal()
+```
+
+## Upper tail of population distribution
+
+```{r}
+bind_rows(
+  mutate(ci_ln, model = "log normal"),
+  mutate(ci_g, model = "gamma")
+) |>
+  ggplot(aes(x = x, y = y, fill = model)) +
+  geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.4) +
+  geom_line() +
+  # scale_x_continuous(limits = c(0.1, 0.5), expand = expansion(c(0, 0.01))) +
+  # scale_y_continuous(limits = c(0, 0.75), expand = expansion(c(0, 0.05))) +
+  coord_cartesian(
+    xlim = c(0.1, 0.51),
+    ylim = c(0, 0.75),
+    expand = FALSE
+  ) +
+  labs(x = "PCB μg/g wet weight", y = "Density") +
+  theme_minimal()
+```
+
+## Proportion over 0.1μg/g wet weight
+
+```{r eval = TRUE}
+paff_ln <- as_draws_df(fit_ln) |>
+  select(.draw, pop_meanlog, pop_sdlog) |>
+  mutate(paff = plnorm(0.1, pop_meanlog, pop_sdlog, lower.tail = FALSE),
+         model = "log normal")
+
+paff_g <- as_draws_df(fit_g) |>
+  select(.draw, shape, scale) |>
+  mutate(paff = pgamma(0.1, shape, scale = scale, lower.tail = FALSE),
+         model = "gamma")
+  
+bind_rows(paff_ln, paff_g) |> 
+  ggplot(aes(x = paff, fill = model, color = model)) +
+  geom_density(alpha = 0.4) +
+  labs(x = "Proportion affected") +
+  scale_x_continuous(label = scales::percent) +
+  scale_y_continuous(expand = expansion(c(0, 0.05))) +
+  theme_minimal()
+```
