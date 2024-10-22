@@ -75,6 +75,7 @@ options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
 library(posterior)
 library(bayesplot)
+library(ggdist)
 
 contam <- read_csv(
   "data/PCB_Puyallup_monitoring_data.csv",
@@ -119,8 +120,9 @@ contam <- read_csv(
 
 contam |>
   ggplot(aes(x = pcb_ug_ww)) +
-  geom_histogram(aes(y = after_stat(density))) +
-  facet_wrap(~n_composite)
+  geom_histogram() +
+  facet_wrap(~n_composite) +
+  scale_y_continuous(breaks = seq(0, 10, 2))
 
 lnorm_data <- function(contam, conc_col) {
   ncomp <- sort(unique(contam$n_composite))
@@ -141,14 +143,17 @@ lnorm_data <- function(contam, conc_col) {
 }
 
 data_ln <- lnorm_data(contam, pcb_ug_ww)
+write_rds(data_ln, "data/pcb_ww_ln_data.rds")
 
-fit_ln <- stan("lnorm-exposure.stan",
+fit_ln <- stan("inst/lnorm-exposure.stan",
   data = data_ln,
   chains = 4,
   iter = 2000
 )
+write_rds(fit_ln, "data/pcb_ww_ln_fit.rds")
 
 post_ln <- as_draws_rvars(fit_ln)
+write_rds(post_ln, "data/pcb_ww_ln_post.rds")
 
 post_ln$pop_meanlog
 post_ln$pop_sdlog
@@ -157,19 +162,21 @@ post_ln$pop_sdlog
 ## this also means that it may be
 ppc_dens_overlay(data_ln$conc, as_draws_matrix(post_ln$conc_gen)[1:50, ]) +
   xlim(c(0, 0.25))
+ppc_dens_overlay(data_ln$conc, as_draws_matrix(post_ln$conc_gen2)[1:50, ]) +
+  xlim(c(0, 0.25))
 
 ## This seems to show that the PIT residuals don't fall outside the expected
 ## envelope
 ppc_pit_ecdf(data_ln$conc, as_draws_matrix(post_ln$conc_gen)) +
   geom_abline(intercept = 0, slope = 1, linetype = "dashed")
+ppc_pit_ecdf(data_ln$conc, as_draws_matrix(post_ln$conc_gen2)) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed")
 
 x <- seq(0, 0.3, length = 1025)
 
-post_dlnorm <- apply(as_draws_matrix(fit_ln), 1, \(p) dlnorm(x, p[1], p[2]))
+# post_dlnorm <- apply(as_draws_matrix(fit_ln), 1, \(p) dlnorm(x, p[1], p[2]))
 
-matplot(x, post_dlnorm[, 1:50], type = "l")
-
-library(ggdist)
+# matplot(x, post_dlnorm[, 1:50], type = "l")
 
 ci_ln <- as_draws_df(fit_ln) |>
   select(.draw, pop_meanlog, pop_sdlog) |>
@@ -178,13 +185,19 @@ ci_ln <- as_draws_df(fit_ln) |>
   unnest(x) |>
   mutate(y = dlnorm(x, pop_meanlog, pop_sdlog)) |>
   group_by(x) |>
-  curve_interval(y, .width = 0.5)
+  curve_interval(y, .width = 0.8)
 
 ci_ln |>
   ggplot(aes(x = x, y = y)) +
   # geom_line(alpha = 0.1)
   geom_lineribbon(aes(ymin = .lower, ymax = .upper), fill = "skyblue") +
   coord_cartesian(xlim = c(0, 0.2))
+
+ci_ln |>
+  ggplot(aes(x = x, y = y)) +
+  geom_lineribbon(aes(ymin = .lower, ymax = .upper), fill = "skyblue") +
+  xlim(0.1, 0.3) +
+  ylim(0, 1)
 
 
 ### ---------------------------------------------------------------------------
