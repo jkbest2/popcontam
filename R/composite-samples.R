@@ -48,3 +48,25 @@ hist(y10, probability = TRUE)
 curve(dlnorm(x, mu_n(n, ml, sdl), sig_n(n, ml, sdl)),
   from = 0, to = 100e5, n = 1025, add = TRUE
 )
+
+rnlnorm <- function(n, m, meanlog, sdlog) {
+  replicate(n, sum(rlnorm(m, meanlog, sdlog)), simplify = TRUE)
+}
+
+sig_n <- function(n, meanlog, sdlog) {
+  sig2 <- sdlog^2
+  log((exp(sig2) - 1) * n * exp(2 * meanlog) / (n * exp(meanlog))^2 + 1)
+}
+
+mu_n <- function(n, meanlog, sdlog) {
+  sig2 <- sdlog^2
+  log(n * exp(meanlog)) + sig2 / 2 - sig_n(n, meanlog, sdlog) / 2
+}
+
+n <- 10
+ml <- 10
+sdl <- 1
+y10 <- rnlnorm(10e3, n, ml, sdl)
+
+hist(y10, probability = TRUE)
+curve(dlnorm(x, mu_n(n, ml, sdl), sig_n(n, ml, sdl)), from = 0, to = 100e5, n = 1025, add = TRUE)
