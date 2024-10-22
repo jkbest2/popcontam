@@ -32,11 +32,17 @@ transformed parameters {
   }
 }
 model {
-  // mean_meanlog ~ std_normal();
-  // mean_sdlog ~ std_normal();
   conc ~ lognormal(mean_meanlog[ncomp_idx], mean_sdlog[ncomp_idx]);
 }
 generated quantities {
   array[N] real conc_gen;
   conc_gen = lognormal_rng(mean_meanlog[ncomp_idx], mean_sdlog[ncomp_idx]);
+  
+  array[N] real conc_gen2 = rep_array(0.0, N);
+  for (n in 1 : N) {
+    for (c in 1 : ncomp[ncomp_idx[n]]) {
+      conc_gen2[n] += lognormal_rng(pop_meanlog, pop_sdlog);
+    }
+    conc_gen2[n] /= ncomp[ncomp_idx[n]];
+  }
 }
