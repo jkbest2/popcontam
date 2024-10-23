@@ -20,17 +20,17 @@ stilly_sim <- function(pop, nearshore_surv_adj = 1) {
   ## Colonization is density-dependent. Pre-parr are fish that will choose to
   ## remain in the river to rear. Capacity is doubled to allow for two cohorts
   ## of fish, non-simultaneously occupying habitats.
-  pre_parr <- beverton_holt(fry, 0.302312^(1/9), 1682111.1 * 2)
+  pre_parr <- beverton_holt(fry, 0.302312^(1 / 9), 1682111.1 * 2)
   ## Parr migrants rear for about nine weeks before moving downstream based on
   ## Snohomish screw trap data. HARP adjust this to impose a late June
   ## temperature penalty
-  parr_mig <- beverton_holt(pre_parr, 0.302312^(8/9), 1682111.1 * 2)
+  parr_mig <- beverton_holt(pre_parr, 0.302312^(8 / 9), 1682111.1 * 2)
   ## Migration "choice" occurs after the first week, so is based on the number
   ## of pre-parr. See also line 50 of lcm-chinook.R, where natal_fry are
   ## subtracted from surviving pre_fry. Migration survival (0.128, estimated) is
   ## applied at the same time here. This cannot be negative because the fry
   ## survival here is equal to the maximum possible pre_parr survival above.
-  fry_mig <- (fry * 0.302312^(1/9) - pre_parr) * 0.128
+  fry_mig <- (fry * 0.302312^(1 / 9) - pre_parr) * 0.128
   ## Transition to first marine year
   delta_fry <- beverton_holt(fry_mig, 0.35, 45335)
   ## Note that this age structure shouldn't be taken literally - we apply all
@@ -43,15 +43,16 @@ stilly_sim <- function(pop, nearshore_surv_adj = 1) {
   age04 <- pop[4] * (1 - 0.92) * 0.9
 
   structure(c(age00, age01, age02, age03, age04, use.names = FALSE),
-            names = paste0("age0", 0:4),
-            oceanadults = unname(age01 + age02 + age03 + age04),
-            prespawners = unname(prespawners),
-            spawners = unname(spawners),
-            eggs = unname(eggs),
-            fry = unname(fry),
-            parr_mig = unname(parr_mig),
-            fry_mig = unname(fry_mig),
-            delta_fry = unname(delta_fry))
+    names = paste0("age0", 0:4),
+    oceanadults = unname(age01 + age02 + age03 + age04),
+    prespawners = unname(prespawners),
+    spawners = unname(spawners),
+    eggs = unname(eggs),
+    fry = unname(fry),
+    parr_mig = unname(parr_mig),
+    fry_mig = unname(fry_mig),
+    delta_fry = unname(delta_fry)
+  )
 }
 
 ## growth_morts <- 0.12
@@ -59,7 +60,7 @@ stilly_sim <- function(pop, nearshore_surv_adj = 1) {
 ### Stillaguamish no effects
 source("R/utils.R")
 source("R/fish-size.R")
-
+source("R/pcb-effects.R")
 
 stilly_0 <- eq_pop(stilly_sim, pop0 = rep(1000, 5))
 oa_0 <- get_oceanadults(stilly_0)
@@ -85,43 +86,14 @@ inv_db2011_survival(sar_0)
 ## fry_sar <- fry_spawners / attr(stilly_0, "fry_mig")
 ## fry_size <- inv_db2011_survival(fry_sar)
 
-db2011_survival <- function(mass) {
-  ## The Duffy and Beauchamp survival regression predicts percent survival. I
-  ## prefer to work with survival rates, which are the percent divided by 100.
-  ## Because log10(0.01) = -2, I included an extra -2 in the intercept of the
-  ## regression. This is why the Duffy and Beauchamp intercept is -1.071 but
-  ## we're using -3.071 here. Given that we're using relative changes in this
-  ## survival it won't actually make a difference.
-  l <- -3.071 + 0.041 * mass
-  10^l
-}
-
-inv_db2011_survival <- function(survival) {
-  ls <- log(survival, 10)
-  (ls + 3.071) / 0.041
-}
 
 dexposure_fun <- function(means, sdlogs, props) {
   function(xs) {
-    vapply(xs, \(x) sum(props * dlnorm(x, means, sdlogs)),
-           0.0)
+    vapply(
+      xs, \(x) sum(props * dlnorm(x, means, sdlogs)),
+      0.0
+    )
   }
-}
-
-mort_qreg <- function(pcb) {
-  ## Effect threshold is 100 ng/g (ww), so return zero effect below this
-  ifelse(
-    pcb < 0.100,
-    0,
-    pmax(0.1702 + 0.221 * log10(pcb), 0))
-}
-
-growth_qreg <- function(pcb) {
-  ifelse(
-    pcb < 0.100,
-    0,
-    pmax(0.15 + 0.0938 * log10(pcb), 0)
-  )
 }
 
 ## Effect plots
@@ -140,7 +112,7 @@ tibble(
   labs(x = "Tissue PCB Concentration (ng/g ww)", y = "Effect") +
   scale_x_log10(limits = c(10, NA), labels = scales::comma, expand = expansion()) +
   scale_y_continuous(limits = c(0, NA), labels = scales::percent, expand = expansion()) +
-  facet_wrap(~ aop, ncol = 1) +
+  facet_wrap(~aop, ncol = 1) +
   theme_bw()
 ggsave("figs/db2011-quantile-regressions.png", width = 6.5, height = 4.5)
 
@@ -160,10 +132,13 @@ exp_df |>
   scale_y_continuous(expand = expansion(c(0, 0.05))) +
   labs(x = "PCB Concentration ng/g (ww)", y = "Population exposure density") +
   theme_bw() +
-  theme(axis.text.y = element_blank(),
-        axis.ticks.y = element_blank())
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
+  )
 ggsave("figs/example-exposure-plot.png",
-       width = 6.5, height = 4.5)
+  width = 6.5, height = 4.5
+)
 
 ## Calculate direct mortality rate based on the exposure distribution and the
 ## Berninger and Tillitt direct mortality relationship
@@ -184,13 +159,6 @@ growth_reduction <- integrate(\(pcb) dexposure(pcb) * growth_qreg(pcb), lower = 
 base_size <- db_size$july_mass
 noexp_surv <- db_size$pred_surv
 ## exp_surv <- integrate(\(pcb) dexposure(pcb) * db2011_survival(gro))
-
-growth_to_surv <- function(pcb, base_size = db_size$july_mass, noexp_surv = db_size$pred_surv) {
-  ## Calculate the expected reduction in size given exposure
-  gred <- growth_qreg(pcb)
-  exp_mass <- (1 - gred) * base_size
-  db2011_survival(exp_mass) / noexp_surv
-}
 
 growth_eff <- integrate(\(pcb) dexposure(pcb) * growth_to_surv(pcb), lower = 0, upper = Inf)$value
 stilly_growth <- eq_pop(stilly_sim, nearshore_surv_adj = growth_eff, pop0 = rep(1000, 5))
