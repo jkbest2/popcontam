@@ -1,4 +1,4 @@
-white_sim <- function(pop) {
+white_sim <- function(pop, nearshore_surv_adj = 1) {
   ## Find number of spawners
   prespawners <- c(
     ## Age 0.* contributions
@@ -42,7 +42,8 @@ white_sim <- function(pop) {
 
   ## Calculate the number at each age
   ## Subyearling migrants
-  age00 <- beverton_holt(fry_mig + parr_mig, 0.08, 60660147.66)
+  age00 <- beverton_holt(fry_mig + parr_mig, 0.08, 60660147.66) *
+    nearshore_surv_adj
   age01 <- beverton_holt(pop[1], 0.590, 687697841.82)
   age02 <- beverton_holt((1 - 0.093) * pop[2], 0.731, 14835699.80)
   age03 <- beverton_holt((1 - 0.647) * pop[3], 0.849, 6838144.42)
@@ -61,7 +62,7 @@ white_sim <- function(pop) {
       age00, age01, age02, age03, age04,
       age10, age11, age12, age13, age14
     ),
-    names = paste0("age0", 0:4),
+    names = c(paste0("age0", 0:4), paste0("age1", 0:4)),
     ## TODO Check on how to count "adults" for this model
     oceanadults = unname(
       age01 + age02 + age03 + age04 +

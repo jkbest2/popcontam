@@ -4,7 +4,6 @@ library(tidyverse)
 ### Simulation
 sumlnorm_pars <- function(n, pop_mu, pop_sig) {
   pop_sig2 <- pop_sig^2
-  ## sum_sig2 <- log((exp(pop_sig2) - 1) * exp(2 * pop_mu) / n / exp(pop_mu)^2 + 1)
   sum_sig2 <- log(1 / n * (exp(pop_sig2) - 1) + 1)
   sum_mu <- log(n) + pop_mu + pop_sig2 / 2 - sum_sig2 / 2
   c(meanlog = sum_mu, meansd = sqrt(sum_sig2))
@@ -174,10 +173,6 @@ ppc_pit_ecdf(data_ln$conc, as_draws_matrix(post_ln$conc_gen2)) +
 
 x <- seq(0, 0.3, length = 1025)
 
-# post_dlnorm <- apply(as_draws_matrix(fit_ln), 1, \(p) dlnorm(x, p[1], p[2]))
-
-# matplot(x, post_dlnorm[, 1:50], type = "l")
-
 ci_ln <- as_draws_df(fit_ln) |>
   select(.draw, pop_meanlog, pop_sdlog) |>
   # slice_sample(n = 100) |>
@@ -189,7 +184,6 @@ ci_ln <- as_draws_df(fit_ln) |>
 
 ci_ln |>
   ggplot(aes(x = x, y = y)) +
-  # geom_line(alpha = 0.1)
   geom_lineribbon(aes(ymin = .lower, ymax = .upper), fill = "skyblue") +
   coord_cartesian(xlim = c(0, 0.2))
 
@@ -209,7 +203,6 @@ sim_df <- tibble(
   n_composite = rpois(n, 100) + 1
 ) |>
   mutate(
-    # n_composite = 10,
     conc = map_dbl(n_composite, \(nc) mean(rlnorm(nc, pop_meanlog, pop_sdlog)))
   )
 
