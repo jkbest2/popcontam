@@ -81,4 +81,5 @@ contam3 <- contam |>
   ) |>
   filter(grepl("Estuary|Nearshore", location))
 
-write_rds(contam3, "data/puy-pcb-estns.rds")
+if (!dir.exists("data/puyallup")) dir.create("data/puyallup")
+write_rds(contam3, "data/puyallup/pcb_estns.rds")
