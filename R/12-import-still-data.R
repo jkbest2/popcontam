@@ -51,4 +51,4 @@ still <- read_xlsx(
   )
 
 if (!dir.exists("data/stillaguamish")) dir.create("data/stillaguamish")
-write_rds(still, "data/stillaguamish/pcb_exposure.rds")
+write_rds(still, "data/stillaguamish/pcb_estns.rds")
