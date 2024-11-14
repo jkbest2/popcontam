@@ -30,7 +30,7 @@ still <- read_xlsx(
   ) |>
   mutate(
     pcb_ug_ww = 1e-3 * pcb_ng_ww,
-    pcb_ug_lw = pcb_ug_ww / pct_lipid,
+    pcb_ug_lw = pcb_ug_ww / pct_lipid / 0.01,
     pcb_ug_lw1 = pcb_ug_ww / 0.01,
     date = as.Date(date)
   ) |>
