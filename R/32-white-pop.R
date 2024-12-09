@@ -12,7 +12,7 @@ white0 <- eq_pop(
 )
 white0_oa <- get_oceanadults(white0)
 
-eff <- read_rds("data/puyallup/pcb_eff.rds")
+eff <- read_rds("data/puyallup/white_pcb_eff.rds")
 
 ## TODO Why are PCBs sometimes *increasing* survival?
 white_exposed <- function(ns_surv, stage = NULL) {
