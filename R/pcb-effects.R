@@ -1,3 +1,5 @@
+library(posterior)
+
 source("R/fish-size.R")
 
 db2011_survival <- function(mass) {
@@ -103,3 +105,35 @@ combo_surv <- function(
   }
   surv
 }
+
+pcb_effect <- function(
+    pop_meanlog,
+    pop_sdlog,
+    wt_type,
+    base_surv,
+    base_size = NULL,
+    remove_pcbs = TRUE,
+    rel.tol = .Machine$double.eps^0.5,
+    subdivisions = 100) {
+  base_size <- base_size %||% inv_db2011_survival(base_surv)
+  expected_surv <- function(pcb) {
+    dlnorm(pcb, pop_meanlog, pop_sdlog) *
+      combo_surv(
+        pcb,
+        base_surv = base_surv,
+        base_size = base_size,
+        wt_type = wt_type,
+        remove_pcbs = remove_pcbs
+      )
+  }
+  integrate(
+    expected_surv,
+    lower = 0, upper = Inf,
+    ## The default rel.tol occasionally gives incorrect results, including one
+    ## set of population parameters that consistently shows an increase in
+    ## survival due to PCB exposure!
+    rel.tol = rel.tol,
+    subdivisions = subdivisions
+  )$value
+}
+rv_pcb_effect <- rfun(pcb_effect)
