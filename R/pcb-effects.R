@@ -1,3 +1,5 @@
+library(posterior)
+
 source("R/fish-size.R")
 
 db2011_survival <- function(mass) {
@@ -11,6 +13,7 @@ db2011_survival <- function(mass) {
   10^l
 }
 
+## Calculates expected mass (g) given the survival rate.
 inv_db2011_survival <- function(survival) {
   ls <- log(survival, 10)
   (ls + 3.071) / 0.041
@@ -55,21 +58,82 @@ growth_qreg <- function(pcb, wt_type = "ww") {
   eff
 }
 
-growth_to_surv <- function(
+growth_mort <- function(
     pcb,
-    base_size = db_size$july_mass,
-    noexp_surv = db_size$pred_surv,
-    wt_type = "ww") {
-  ## Calculate the expected reduction in size given exposure
-  gred <- growth_qreg(pcb, wt_type)
-  exp_mass <- (1 - gred) * base_size
-  db2011_survival(exp_mass) / noexp_surv
+    base_size = NULL,
+    base_surv = db_size$pred_surv,
+    wt_type = "ww",
+    remove_pcbs = TRUE) {
+  ## If base size is not provided, calculate its value from the provided
+  ## survival rate
+  base_size <- base_size %||% inv_db2011_survival(base_surv)
+
+  ## Calculate the reduction in growth due to PCB exposure.
+  gr_red <- 1 - growth_qreg(pcb, wt_type)
+
+  if (remove_pcbs) {
+    exp_size <- base_size
+    noexp_size <- base_size / gr_red
+    exp_surv <- base_surv
+    noexp_surv <- db2011_survival(noexp_size)
+  } else {
+    exp_size <- base_size * gr_red
+    noexp_size <- base_size
+    exp_surv <- db2011_survival(exp_size)
+    noexp_surv <- base_surv
+  }
+  ## Calculate mortality due to PCB exposure. The proportion here gives the
+  ## fraction of fish that that survive after exposure relative to those that
+  ## would have survived with no exposure. The complement is then taken to get
+  ## the relative change in mortality.
+  1 - exp_surv / noexp_surv
 }
 
-combo_mort <- function(pcb, base_size = db_size$july_mass, noexp_surv = db_size$pred_surv, wt_type = "ww") {
+combo_surv <- function(
+    pcb,
+    base_size = db_size$july_mass,
+    base_surv = db_size$pred_surv,
+    wt_type = "ww",
+    remove_pcbs = TRUE) {
   dir_mort <- mort_qreg(pcb, wt_type)
-  grwth_mort <- 1 - growth_to_surv(pcb, base_size, noexp_surv, wt_type)
-  ## Only individuals who are not affected by direct mortality are vulnerable
-  ## to growth-restriction mortality
-  dir_mort + (1 - dir_mort) * grwth_mort
+  gr_mort <- growth_mort(pcb, base_size, base_surv, wt_type, remove_pcbs)
+
+  mort <- dir_mort + (1 - dir_mort) * gr_mort
+  surv <- 1 - mort
+  if (remove_pcbs) {
+    surv <- 1 / surv
+  }
+  surv
 }
+
+pcb_effect <- function(
+    pop_meanlog,
+    pop_sdlog,
+    wt_type,
+    base_surv,
+    base_size = NULL,
+    remove_pcbs = TRUE,
+    rel.tol = .Machine$double.eps^0.5,
+    subdivisions = 100) {
+  base_size <- base_size %||% inv_db2011_survival(base_surv)
+  expected_surv <- function(pcb) {
+    dlnorm(pcb, pop_meanlog, pop_sdlog) *
+      combo_surv(
+        pcb,
+        base_surv = base_surv,
+        base_size = base_size,
+        wt_type = wt_type,
+        remove_pcbs = remove_pcbs
+      )
+  }
+  integrate(
+    expected_surv,
+    lower = 0, upper = Inf,
+    ## The default rel.tol occasionally gives incorrect results, including one
+    ## set of population parameters that consistently shows an increase in
+    ## survival due to PCB exposure!
+    rel.tol = rel.tol,
+    subdivisions = subdivisions
+  )$value
+}
+rv_pcb_effect <- rfun(pcb_effect)

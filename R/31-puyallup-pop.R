@@ -13,7 +13,7 @@ puy0 <- eq_pop(
 )
 puy0_oa <- get_oceanadults(puy0)
 
-eff <- read_rds("data/puyallup/pcb_eff.rds")
+eff <- read_rds("data/puyallup/puy_pcb_eff.rds")
 
 puyallup_exposed <- function(ns_surv, stage = NULL) {
   eqp <- eq_pop(puyallup_sim, nearshore_surv_adj = ns_surv, pop0 = rep(1000, 5))

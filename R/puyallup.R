@@ -1,11 +1,15 @@
 puyallup_sim <- function(pop, nearshore_surv_adj = 1) {
   ## Get number of spawners
   prespawners <- c(0.093 * pop[3], 0.647 * pop[4], pop[5])
+  prespawner_prop <- proportions(prespawners)
   ## Migrant and holding prespawner steps added to account for associated
   ## capacities
-  migrantprespawn <- beverton_holt(prespawners, 0.722, 12657408.21)
-  holdingprespawn <- beverton_holt(migrantprespawn, 0.872, 729726.40)
-  spawners <- beverton_holt(migrantprespawn, 0.971, 1139372348.62)
+  migrantprespawn <- beverton_holt(sum(prespawners), 0.722, 12657408.21) *
+    prespawner_prop
+  holdingprespawn <- beverton_holt(sum(migrantprespawn), 0.872, 729726.40) *
+    prespawner_prop
+  spawners <- beverton_holt(holdingprespawn, 0.971, 1139372348.62) *
+    prespawner_prop
 
   ## Fecundity is age-dependent and assumes 50/50 sex ratio
   fecundity <- c(
