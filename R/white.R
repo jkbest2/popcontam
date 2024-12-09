@@ -6,11 +6,15 @@ white_sim <- function(pop, nearshore_surv_adj = 1) {
     ## Age 1.* contributions
     0.093 * pop[8], 0.647 * pop[9], pop[10]
   )
+  prespawner_prop <- proportions(prespawners)
   ## Added migrant and holding prespawners so that the relevant capacities can
   ## be included.
-  migrantprespawn <- beverton_holt(prespawners, 0.837, 22972996.51)
-  holdingprespawn <- beverton_holt(migrantprespawn, 0.867, 680441.18)
-  spawners <- beverton_holt(migrantprespawn, 0.971, 522439767.58)
+  migrantprespawn <- beverton_holt(sum(prespawners), 0.837, 22972996.51) *
+    prespawner_prop
+  holdingprespawn <- beverton_holt(sum(migrantprespawn), 0.867, 680441.18) *
+    prespawner_prop
+  spawners <- beverton_holt(sum(holdingprespawn), 0.971, 522439767.58) *
+    prespawner_prop
 
   ## Calculate number of eggs; Fecundity is age dependent and assumes 50/50 sex
   ## ratio
