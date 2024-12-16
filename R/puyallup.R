@@ -8,7 +8,7 @@ puyallup_sim <- function(pop, nearshore_surv_adj = 1) {
     prespawner_prop
   holdingprespawn <- beverton_holt(sum(migrantprespawn), 0.872, 729726.40) *
     prespawner_prop
-  spawners <- beverton_holt(holdingprespawn, 0.971, 1139372348.62) *
+  spawners <- beverton_holt(sum(holdingprespawn), 0.971, 1139372348.62) *
     prespawner_prop
 
   ## Fecundity is age-dependent and assumes 50/50 sex ratio
