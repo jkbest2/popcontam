@@ -14,7 +14,7 @@ puy0 <- eq_pop(
 )
 puy0_sp <- get_spawners(puy0)
 
-eff <- read_rds("data/puyallup/puy_pcb_eff.rds")
+puy_eff <- read_rds("data/puyallup/puy_pcb_eff.rds")
 
 puyallup_exposed <- function(ns_surv, stage = NULL) {
   eqp <- eq_pop(
@@ -31,9 +31,18 @@ puyallup_exposed <- function(ns_surv, stage = NULL) {
 }
 rv_puyallup_exposed <- rfun(puyallup_exposed)
 
-puy_sp_ww <- rv_puyallup_exposed(eff$ww, "spawners")
-puy_sp_lw <- rv_puyallup_exposed(eff$lw, "spawners")
-puy_sp_lw1 <- rv_puyallup_exposed(eff$lw1, "spawners")
+puy_sp_ww <- rv_puyallup_exposed(puy_eff$ww, "spawners")
+puy_sp_lw <- rv_puyallup_exposed(puy_eff$lw, "spawners")
+puy_sp_lw1 <- rv_puyallup_exposed(puy_eff$lw1, "spawners")
+
+puy_ww <- rv_puyallup_exposed(puy_eff$ww)
+puy_lw <- rv_puyallup_exposed(puy_eff$lw)
+puy_lw1 <- rv_puyallup_exposed(puy_eff$lw1)
+
+puy_age00 <- puy0[1]
+puy_age00_ww <- puy_ww[1]
+puy_age00_lw <- puy_lw[1]
+puy_age00_lw1 <- puy_lw1[1]
 
 write_rds(
   list(

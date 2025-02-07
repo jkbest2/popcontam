@@ -28,13 +28,14 @@ eff_ww <- rv_pcb_effect(
   base_surv = sar,
   remove_pcbs = TRUE
 )
-## Get roundoff errors using a rel.tol that is too low, so increased here.
 eff_lw <- rv_pcb_effect(
   pop_meanlog = post$lw$pop_meanlog,
   pop_sdlog = post$lw$pop_sdlog,
   wt_type = "lw",
   base_surv = sar,
-  remove_pcbs = TRUE
+  remove_pcbs = TRUE,
+  ## Get roundoff errors using a rel.tol that is too low, so increased here.
+  rel.tol = 1e-6
 )
 eff_lw1 <- rv_pcb_effect(
   pop_meanlog = post$lw1$pop_meanlog,
