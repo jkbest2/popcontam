@@ -32,6 +32,7 @@ transformed parameters {
   }
 }
 model {
+  target += -log(pop_sdlog);
   conc ~ lognormal(mean_meanlog[ncomp_idx], mean_sdlog[ncomp_idx]);
 }
 generated quantities {
