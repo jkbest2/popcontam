@@ -58,62 +58,7 @@ pbde_surv <- pbde_surv_full |>
   ) |>
   select(strata, concentration, vulnerable, n_surv, n_dead, p_surv, q10, q90)
 
-## Fit model --------------------------------
-mod <- gam(
-  cbind(n_surv, n_dead) ~ s(sqrt(concentration), k = 6, bs = "bs", m = c(2, 2)),
-  data = pbde_surv,
-  family = binomial()
+write_rds(
+  pbde_surv,
+  here::here("data", "pbde_surv.rds")
 )
-
-## Predict values with uncertainty
-pred_df <- tibble(
-  concentration = seq(0, sqrt(300), length.out = 257)^2
-)
-
-gam_pred_rv <- function(mod, newdata, n = 4e3, type = "response") {
-  beta <- coef(mod)
-  n_beta <- length(beta)
-
-  v <- vcov(mod)
-  vchol <- chol(v)
-
-  x <- rvar_rng(rnorm, n_beta, ndraws = n)
-  beta_sim <- beta + t(vchol) %*% x
-  covar_sim <- predict(mod, newdata = newdata, type = "lpmatrix")
-  pred <- covar_sim %**% beta_sim
-  if (type == "response") {
-    inv_link <- family(mod)$linkinv
-    pred <- rfun(inv_link)(pred)
-  }
-  pred
-}
-
-# pred_df |>
-#   mutate(
-#     pred_rv = gam_pred_rv(mod, pred_df)
-#   ) |>
-#   point_interval(pred_rv, .width = 0.8) |>
-#   ggplot(aes(x = concentration, y = pred_rv)) +
-#   geom_ribbon(
-#     aes(
-#       ymin = .lower,
-#       ymax = .upper
-#     ),
-#     alpha = 0.2
-#   ) +
-#   geom_line() +
-#   geom_pointrange(
-#     data = pbde_surv,
-#     aes(
-#       y = p_surv,
-#       ymin = q10, ymax = q90,
-#     )
-#   ) +
-#   scale_x_continuous(
-#     name = "PBDE Concentration (ng/g ww)"
-#   ) +
-#   scale_y_continuous(
-#     name = "Probability of survival",
-#     labels = scales::percent
-#   )
-# ggsave(here::here("figs", "pbde-dose-response.png"))
