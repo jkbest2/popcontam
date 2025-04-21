@@ -3,7 +3,7 @@ library(posterior)
 library(mgcv)
 library(ggdist)
 
-pbde_exp <- read_rds(here::here("data", "puyallup", "pbde_exposure.rds"))
+pbde_exp <- read_rds(here::here("data", "stillaguamish", "pbde_exposure.rds"))
 pbde_surv <- read_rds(here::here("data", "pbde_surv.rds"))
 
 ## Fit model --------------------------------
@@ -26,7 +26,7 @@ dr_coefs_rv <- function(mod = dr_mod, ndraws = 4e3) {
 
 gen_base_surv <- function(threshold, surv_df = pbde_surv, ndraws = 4e3) {
   thr_surv <- surv_df |>
-    filter(concentration <= threshold) |>
+    filter(concentration < threshold) |>
     summarize(n_surv = sum(n_surv), n_dead = sum(n_dead))
   rvar_rng(rbeta, 1, thr_surv$n_surv + 1, thr_surv$n_dead + 1, ndraws = ndraws)
 }
@@ -35,7 +35,7 @@ exp_rel_surv <- function(conc, beta, pop_meanlog, pop_sdlog, base_surv, thr = 0)
   map_dbl(
     conc,
     function(conc) {
-      if (conc <= thr) {
+      if (conc < thr) {
         surv <- base_surv
       } else {
         dm <- predict(
@@ -113,7 +113,22 @@ thr_df <- tibble(
 ggplot(thr_df, aes(xdist = rsurv, y = threshold)) +
   geom_vline(xintercept = 1, linetype = "dashed") +
   stat_halfeye(aes(fill = threshold)) +
-  scale_x_continuous(name = "Relative Survival", labels = scales::percent) +
+  scale_x_continuous(
+    name = "Relative Survival", labels = scales::percent,
+    # breaks = seq(0.9, 1.2, 0.05), minor_breaks = seq(0, 1.2, 0.01)
+  ) +
+  # coord_cartesian(xlim = c(0.9, 1.2)) +
+  labs(y = "Threshold") +
+  guides(color = "none", fill = "none")
+
+ggplot(thr_df, aes(xdist = rsurv, y = threshold)) +
+  geom_vline(xintercept = 1, linetype = "dashed") +
+  stat_halfeye(aes(fill = threshold)) +
+  scale_x_continuous(
+    name = "Relative Survival", labels = scales::percent,
+    breaks = seq(0.9, 1.2, 0.05), minor_breaks = seq(0, 1.2, 0.01)
+  ) +
+  coord_cartesian(xlim = c(0.9, 1.2)) +
   labs(y = "Threshold") +
   guides(color = "none", fill = "none")
 ggsave(here::here("figs", "pbde-effects-thresholds.png"), width = 8, height = 5)
@@ -122,8 +137,8 @@ dr_pred_rv <- function(conc, mod = dr_mod, n = 4e3, threshold = 0) {
   newdata <- tibble(
     concentration = conc
   )
-  nd0 <- filter(newdata, concentration <= threshold)
-  nd1 <- filter(newdata, concentration > threshold)
+  nd0 <- filter(newdata, concentration < threshold)
+  nd1 <- filter(newdata, concentration >= threshold)
 
   pred0 <- rep(
     gen_base_surv(threshold, pbde_surv, ndraws = 1000),
@@ -155,7 +170,7 @@ pred_df <- tibble(
     `7` = dr_pred_rv(concentration, n = 1e3, threshold = 7)
   ) |>
   pivot_longer(
-    c(pred0, pred3, pred7),
+    c(`0`, `3`, `5.5`, `7`),
     names_to = "threshold",
     names_transform = as.numeric,
     values_to = "survival"
