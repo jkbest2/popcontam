@@ -1,0 +1,19 @@
+River,Effect Type,Weight Normalization,Median effect,Lower 95%,Upper 95%
+Puyallup,Direct,Wet Weight,0.0390%,0.0144%,0.0951%
+Puyallup,Direct,Lipid Weight,1.2155%,0.7999%,1.8414%
+Puyallup,Direct,1% Lipid Weight,1.3210%,0.9494%,1.8316%
+Puyallup,Growth,Wet Weight,0.6788%,0.3873%,1.1154%
+Puyallup,Growth,Lipid Weight,5.2865%,4.2277%,6.6012%
+Puyallup,Growth,1% Lipid Weight,7.6893%,6.6865%,8.7727%
+White,Direct,Wet Weight,0.0390%,0.0144%,0.0951%
+White,Direct,Lipid Weight,1.2155%,0.7999%,1.8414%
+White,Direct,1% Lipid Weight,1.3210%,0.9494%,1.8316%
+White,Growth,Wet Weight,0.6724%,0.3836%,1.1049%
+White,Growth,Lipid Weight,5.2378%,4.1885%,6.5404%
+White,Growth,1% Lipid Weight,7.6177%,6.6243%,8.6912%
+Stillaguamish,Direct,Wet Weight,0.0001%,0.0000%,0.0174%
+Stillaguamish,Direct,Lipid Weight,0.0211%,0.0006%,0.2954%
+Stillaguamish,Direct,1% Lipid Weight,0.0825%,0.0070%,0.5299%
+Stillaguamish,Growth,Wet Weight,0.0073%,0.0000%,0.1876%
+Stillaguamish,Growth,Lipid Weight,0.3923%,0.0636%,1.4996%
+Stillaguamish,Growth,1% Lipid Weight,1.1636%,0.4162%,2.6350%

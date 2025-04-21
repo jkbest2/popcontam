@@ -94,27 +94,47 @@ combo_surv <- function(
     base_size = db_size$july_mass,
     base_surv = db_size$pred_surv,
     wt_type = "ww",
+    eff_type = c("combo_surv", "combo_mort", "dir_mort", "gr_mort"),
     remove_pcbs = TRUE) {
-  dir_mort <- mort_qreg(pcb, wt_type)
-  gr_mort <- growth_mort(pcb, base_size, base_surv, wt_type, remove_pcbs)
+  eff_type <- match.arg(eff_type)
+  if (remove_pcbs && eff_type != "combo_surv") {
+    warning("remove_pcbs only applies to eff_type = \"combo_surv\"")
+  }
 
-  mort <- dir_mort + (1 - dir_mort) * gr_mort
+  dir_mort <- mort_qreg(pcb, wt_type)
+  if (eff_type == "dir_mort") {
+    return(dir_mort)
+  }
+
+  gr_mort <- (1 - dir_mort) *
+    growth_mort(pcb, base_size, base_surv, wt_type, remove_pcbs)
+  if (eff_type == "gr_mort") {
+    return(gr_mort)
+  }
+
+  mort <- dir_mort + gr_mort
+  if (eff_type == "combo_mort") {
+    return(mort)
+  }
+
   surv <- 1 - mort
   if (remove_pcbs) {
     surv <- 1 / surv
   }
-  surv
+  return(surv)
 }
 
 pcb_effect <- function(
     pop_meanlog,
     pop_sdlog,
     wt_type,
+    eff_type = c("combo_surv", "combo_mort", "dir_mort", "gr_mort"),
     base_surv,
     base_size = NULL,
     remove_pcbs = TRUE,
     rel.tol = .Machine$double.eps^0.5,
     subdivisions = 100) {
+  eff_type <- match.arg(eff_type)
   base_size <- base_size %||% inv_db2011_survival(base_surv)
   expected_surv <- function(pcb) {
     dlnorm(pcb, pop_meanlog, pop_sdlog) *
@@ -123,6 +143,7 @@ pcb_effect <- function(
         base_surv = base_surv,
         base_size = base_size,
         wt_type = wt_type,
+        eff_type = eff_type,
         remove_pcbs = remove_pcbs
       )
   }

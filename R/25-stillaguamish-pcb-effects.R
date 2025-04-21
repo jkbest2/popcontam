@@ -53,3 +53,73 @@ write_rds(
   ),
   "data/stillaguamish/pcb_eff.rds"
 )
+
+## Direct mortality only, not used in population model ------------------------
+eff_ww_dm <- rv_pcb_effect(
+  pop_meanlog = post$ww$pop_meanlog,
+  pop_sdlog = post$ww$pop_sdlog,
+  base_surv = sar,
+  wt_type = "ww",
+  eff_type = "dir_mort",
+  remove_pcbs = FALSE
+)
+eff_lw_dm <- rv_pcb_effect(
+  pop_meanlog = post$lw$pop_meanlog,
+  pop_sdlog = post$lw$pop_sdlog,
+  base_surv = sar,
+  wt_type = "lw",
+  eff_type = "dir_mort",
+  remove_pcbs = FALSE
+)
+eff_lw1_dm <- rv_pcb_effect(
+  pop_meanlog = post$lw1$pop_meanlog,
+  pop_sdlog = post$lw1$pop_sdlog,
+  base_surv = sar,
+  wt_type = "lw",
+  eff_type = "dir_mort",
+  remove_pcbs = FALSE
+)
+
+write_rds(
+  list(
+    ww = eff_ww_dm,
+    lw = eff_lw_dm,
+    lw1 = eff_lw1_dm
+  ),
+  "data/stillaguamish/pcb_dm_eff.rds"
+)
+
+## Growth-related mortality only, not used in population model ----------------
+eff_ww_gr <- rv_pcb_effect(
+  pop_meanlog = post$ww$pop_meanlog,
+  pop_sdlog = post$ww$pop_sdlog,
+  base_surv = sar,
+  wt_type = "ww",
+  eff_type = "gr_mort",
+  remove_pcbs = FALSE
+)
+eff_lw_gr <- rv_pcb_effect(
+  pop_meanlog = post$lw$pop_meanlog,
+  pop_sdlog = post$lw$pop_sdlog,
+  base_surv = sar,
+  wt_type = "lw",
+  eff_type = "gr_mort",
+  remove_pcbs = FALSE
+)
+eff_lw1_gr <- rv_pcb_effect(
+  pop_meanlog = post$lw1$pop_meanlog,
+  pop_sdlog = post$lw1$pop_sdlog,
+  base_surv = sar,
+  wt_type = "lw",
+  eff_type = "gr_mort",
+  remove_pcbs = FALSE
+)
+
+write_rds(
+  list(
+    ww = eff_ww_gr,
+    lw = eff_lw_gr,
+    lw1 = eff_lw1_gr
+  ),
+  "data/stillaguamish/pcb_gr_eff.rds"
+)

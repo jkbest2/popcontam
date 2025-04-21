@@ -13,8 +13,10 @@ puy_ww <- tibble(pcb = seq(0, 0.3, length.out = 1025)) |>
   mutate(popdens = rfun(dlnorm)(
     pcb,
     puy_exp$ww$pop_meanlog,
-    puy_exp$ww$pop_sdlog)) |>
-  curve_interval(popdens)
+    puy_exp$ww$pop_sdlog)) 
+    
+    |>
+  # curve_interval(popdens)
 puy_ww_plt <- puy_ww |>
   ggplot(aes(x = pcb)) +
   geom_vline(xintercept = 0.1, linetype = "dashed") +
@@ -226,3 +228,100 @@ combo_eff |>
   theme_minimal()
 ggsave("figs/puyallup/combo_pcb_relpop.pdf", width = 11, height = 8.5)
 ggsave("figs/puyallup/combo_pcb_relpop.png", width = 11, height = 8.5)
+
+## Mortality contributions ----------------------------------------------------
+puy_dm_eff <- read_rds(
+  here::here("data", "puyallup", "puy_pcb_dm_eff.rds")) |>
+  map_vec(~ pluck(.))
+puy_gr_eff <- read_rds(
+  here::here("data", "puyallup", "puy_pcb_gr_eff.rds")) |>
+  map_vec(~ pluck(.))
+white_dm_eff <- read_rds(
+  here::here("data", "puyallup", "white_pcb_dm_eff.rds")) |>
+  map_vec(~ pluck(.))
+white_gr_eff <- read_rds(
+  here::here("data", "puyallup", "white_pcb_gr_eff.rds")) |>
+  map_vec(~ pluck(.))
+stilly_dm_eff <- read_rds(
+  here::here("data", "stillaguamish", "pcb_dm_eff.rds")) |>
+  map_vec(~ pluck(.))
+stilly_gr_eff <- read_rds(
+  here::here("data", "stillaguamish", "pcb_gr_eff.rds")) |>
+  map_vec(~ pluck(.))
+
+
+eff_df <- expand_grid(
+  river = factor(c("Puyallup", "White", "Stillaguamish"),
+    levels = c("Puyallup", "White", "Stillaguamish")
+  ),
+  eff_type = factor(
+    c("Direct", "Growth"),
+    levels = rev(c("Direct", "Growth", "Combined"))),
+  wt_type = factor(
+    c("Wet Weight", "Lipid Weight", "1% Lipid Weight"),
+    levels = c("Wet Weight", "Lipid Weight", "1% Lipid Weight"))
+) |>
+  mutate(
+    eff = rvar(c(
+      puy_dm_eff, puy_gr_eff,
+      white_dm_eff, white_gr_eff,
+      stilly_dm_eff, stilly_gr_eff
+    ))
+  )
+
+eff_df2 <- eff_df |>
+  summarize(
+    eff = rvar_sum(eff),
+    .by = c(river, wt_type)
+  ) |>
+  mutate(
+    eff_type = factor(
+      "Combined",
+      levels = rev(c("Direct", "Growth", "Combined"))
+    )
+  )
+
+bind_rows(eff_df, eff_df2) |>
+  ggplot(aes(xdist = eff, y = eff_type, color = eff_type)) +
+  stat_slabinterval() +
+  facet_grid(wt_type ~ river) +
+  scale_x_continuous(
+    name = "Mortality rate",
+    labels = scales::percent
+  ) +
+  labs(
+    y = "Mortality source",
+  ) +
+  guides(color = "none")
+ggsave(here::here("figs", "mort_sources.png"), width = 7.5, height = 5)
+
+
+# eff_df |>
+#   left_join(
+#     select(eff_df2, river, wt_type, combo_eff = eff),
+#     by = join_by(river, wt_type)
+#   ) |>
+#   mutate(
+#     prop_eff = eff / combo_eff
+#   ) |>
+#   ggplot(aes(xdist = prop_eff, y = eff_type, color = eff_type)) +
+#   stat_slabinterval() +
+#   facet_grid(wt_type ~ river) +
+#   scale_x_continuous(
+#     name = "Proportion of mortality",
+#     labels = scales::percent
+#   )
+
+
+eff_df3 <- eff_df |>
+  point_interval(eff) |>
+  select(-.point, -.interval, -.width)
+write_csv(data.frame(eff_df3), here::here("data", "pcb_effect_table.csv"))
+  
+eff_df3 |>
+  mutate(
+    across(
+      c(eff, .lower, .upper),
+      scales::percent
+    )
+  )

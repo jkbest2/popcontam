@@ -4,11 +4,14 @@ library(logKDE)
 
 chk_pcb <- read_xlsx("data/CB_Stilly_Puyallup_monitoring_data.xlsx") |>
   separate(Species, c("lifestage", "species")) |>
-  mutate(river = str_to_title(RiverSystem),
-         unit = "ng/g (wet)") |>
+  mutate(
+    river = str_to_title(RiverSystem),
+    unit = "ng/g (wet)"
+  ) |>
   select(river, species, lifestage,
-         pcbs = `Max of CONC_FOUND`,
-         unit) |>
+    pcbs = `Max of CONC_FOUND`,
+    unit
+  ) |>
   mutate(gt_lla = pcbs >= 100)
 
 
@@ -30,10 +33,14 @@ growth_qreg <- function(pcb) {
 
 
 puy_pcb <- chk_pcb |>
-  filter(river == "Puyallup",
-         lifestage == "juvenile") |>
-  mutate(pcbs = 1e-3 * pcbs,
-         unit = "μg/g (wet)")
+  filter(
+    river == "Puyallup",
+    lifestage == "juvenile"
+  ) |>
+  mutate(
+    pcbs = 1e-3 * pcbs,
+    unit = "μg/g (wet)"
+  )
 
 puy_pcb_dens <- density(puy_pcb$pcbs)
 
@@ -82,19 +89,28 @@ curve(dnorm(x, mean(boot_sum), sd(boot_sum)), add = TRUE)
 
 plot(boot_ld[[1]], col = rgb(0, 0, 0, 0.1), ylim = c(0, 100))
 walk(boot_ld[2:200], lines, col = rgb(0, 0, 0, 0.1))
-abline(v= 0.1, lty = "dashed")
+abline(v = 0.1, lty = "dashed")
 
 chk_pcb |>
   filter(lifestage == "juvenile") |>
-  mutate(river = ifelse(river == "Puyallup", "Puyallup/White", river)) |>
-ggplot(aes(x = pcbs)) +
-  geom_histogram(breaks = seq(0, 175, 5)) +
+  mutate(
+    river = ifelse(river == "Puyallup", "Puyallup/White", river),
+    pcb_ug = 1e-3 * pcbs
+  ) |>
+  ggplot(aes(x = pcb_ug)) +
+  geom_histogram(breaks = seq(0, 0.175, 0.005)) +
   ## geom_density(bounds = c(0, Inf)) +
-  geom_vline(xintercept = 100, linetype = "dashed") +
-  facet_wrap(~ river, nrow = 2, scales = "free_y") +
-  scale_y_continuous(expand = expansion(c(0, 0.05), 0)) +
-  scale_x_continuous(expand = expansion(0, 0)) +
-  labs(x = "Total PCBs (ng/g ww)",
-       y = "Number of observations") +
+  geom_vline(xintercept = 0.100, linetype = "dashed") +
+  facet_wrap(~river, nrow = 2, scales = "free_y") +
+  scale_y_continuous(
+    name = "Number of observations",
+    expand = expansion(c(0, 0.05), 0)
+  ) +
+  scale_x_continuous(
+    name = "Total PCBs (μg/g)",
+    labels = ~ sprintf("%0.3f", .),
+    expand = expansion(0, 0)
+  ) +
   theme_bw()
-ggsave("PCB_obs.png")
+
+ggsave("figs/pcb_obs.png", width = 11, height = 8.5)
