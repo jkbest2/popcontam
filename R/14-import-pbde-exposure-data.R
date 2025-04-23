@@ -10,7 +10,7 @@ pbde <- read_xlsx(
     n_composite = CompositeN,
     bde47_ww = `Conc_Found BDE_47 (ng/g wet)`,
     bde99_ww = `Conc_Found BDE_99 (ng/g wet)`,
-    bd99_loq = `BDE_99 LOQ`,
+    bde99_loq = `BDE_99 LOQ`,
     bde_sum = `Conc_BDE47+BDE99 (ng/g ww)`,
     ratio = Ratio,
     location = `Sample Location`,

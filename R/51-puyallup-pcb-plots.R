@@ -13,10 +13,8 @@ puy_ww <- tibble(pcb = seq(0, 0.3, length.out = 1025)) |>
   mutate(popdens = rfun(dlnorm)(
     pcb,
     puy_exp$ww$pop_meanlog,
-    puy_exp$ww$pop_sdlog)) 
-    
-    |>
-  # curve_interval(popdens)
+    puy_exp$ww$pop_sdlog)) #|>
+# curve_interval(popdens)
 puy_ww_plt <- puy_ww |>
   ggplot(aes(x = pcb)) +
   geom_vline(xintercept = 0.1, linetype = "dashed") +
@@ -231,22 +229,28 @@ ggsave("figs/puyallup/combo_pcb_relpop.png", width = 11, height = 8.5)
 
 ## Mortality contributions ----------------------------------------------------
 puy_dm_eff <- read_rds(
-  here::here("data", "puyallup", "puy_pcb_dm_eff.rds")) |>
+  here::here("data", "puyallup", "puy_pcb_dm_eff.rds")
+) |>
   map_vec(~ pluck(.))
 puy_gr_eff <- read_rds(
-  here::here("data", "puyallup", "puy_pcb_gr_eff.rds")) |>
+  here::here("data", "puyallup", "puy_pcb_gr_eff.rds")
+) |>
   map_vec(~ pluck(.))
 white_dm_eff <- read_rds(
-  here::here("data", "puyallup", "white_pcb_dm_eff.rds")) |>
+  here::here("data", "puyallup", "white_pcb_dm_eff.rds")
+) |>
   map_vec(~ pluck(.))
 white_gr_eff <- read_rds(
-  here::here("data", "puyallup", "white_pcb_gr_eff.rds")) |>
+  here::here("data", "puyallup", "white_pcb_gr_eff.rds")
+) |>
   map_vec(~ pluck(.))
 stilly_dm_eff <- read_rds(
-  here::here("data", "stillaguamish", "pcb_dm_eff.rds")) |>
+  here::here("data", "stillaguamish", "pcb_dm_eff.rds")
+) |>
   map_vec(~ pluck(.))
 stilly_gr_eff <- read_rds(
-  here::here("data", "stillaguamish", "pcb_gr_eff.rds")) |>
+  here::here("data", "stillaguamish", "pcb_gr_eff.rds")
+) |>
   map_vec(~ pluck(.))
 
 
@@ -256,10 +260,12 @@ eff_df <- expand_grid(
   ),
   eff_type = factor(
     c("Direct", "Growth"),
-    levels = rev(c("Direct", "Growth", "Combined"))),
+    levels = rev(c("Direct", "Growth", "Combined"))
+  ),
   wt_type = factor(
     c("Wet Weight", "Lipid Weight", "1% Lipid Weight"),
-    levels = c("Wet Weight", "Lipid Weight", "1% Lipid Weight"))
+    levels = c("Wet Weight", "Lipid Weight", "1% Lipid Weight")
+  )
 ) |>
   mutate(
     eff = rvar(c(
@@ -317,7 +323,7 @@ eff_df3 <- eff_df |>
   point_interval(eff) |>
   select(-.point, -.interval, -.width)
 write_csv(data.frame(eff_df3), here::here("data", "pcb_effect_table.csv"))
-  
+
 eff_df3 |>
   mutate(
     across(
