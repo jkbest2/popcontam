@@ -14,7 +14,7 @@ threshold <- pbde_mod$pbde_threshold
 
 eff <- pbde_eff(pbde_exp, dr_mod, threshold, pbde_surv, thin = 10)
 
-write_rds(eff, here::here("data", "puyallup", "puy-pbde-eff.rds"))
+write_rds(1 / eff, here::here("data", "puyallup", "puy-pbde-eff.rds"))
 
 ## Fit model --------------------------------
 # dr_mod <- gam(
