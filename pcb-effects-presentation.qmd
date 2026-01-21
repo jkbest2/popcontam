@@ -1,0 +1,186 @@
+---
+title: Population effects of PCB exposure
+format: revealjs
+---
+
+```{r setup}
+## | label: setup
+## | echo: false
+## | warnings: false
+## | messages: false
+
+library(tidyverse)
+library(posterior)
+library(bayesplot)
+library(ggdist)
+
+source("R/pcb-effects.R")
+
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## What has the population been exposed to?
+
+```{r}
+fit_ln <- read_rds("data/pcb_ww_ln_fit.rds")
+post_ln <- read_rds("data/pcb_ww_ln_post.rds")
+
+x <- seq(0, 0.52, length = 1025)
+
+ci_ln <- as_draws_df(fit_ln) |>
+  select(.draw, pop_meanlog, pop_sdlog) |>
+  mutate(x = list(x)) |>
+  unnest(x) |>
+  mutate(y = dlnorm(x, pop_meanlog, pop_sdlog)) |>
+  group_by(x) |>
+  curve_interval(y, .width = 0.8)
+
+ci_ln |>
+  ggplot(aes(x = x, y = y)) +
+  geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.4) +
+  geom_line() +
+  coord_cartesian(xlim = c(0, 0.21), ylim = c(0, 100), expand = FALSE) +
+  labs(x = "PCB μg/g wet weight", y = "Density") +
+  theme_minimal()
+```
+
+## What has the population been exposed to?
+
+```{r}
+ci_ln |>
+  ggplot(aes(x = x, y = y)) +
+  geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.4) +
+  geom_line() +
+  coord_cartesian(
+    xlim = c(0.1, 0.51),
+    ylim = c(0, 0.75),
+    expand = FALSE
+  ) +
+  labs(x = "PCB μg/g wet weight", y = "Density") +
+  theme_minimal()
+```
+
+## What is the combined survival effect?
+
+```{r}
+tibble(
+  pcb = seq(0, 0.5, length.out = 1025),
+  surv = combo_mort(pcb)
+) |>
+  ggplot(aes(x = pcb, y = surv)) +
+  geom_line() +
+  scale_y_continuous(label = scales::percent) +
+  labs(x = "PCB μg/g wet weight", y = "Excess mortality") +
+  theme_minimal()
+```
+
+## How does this translate to population survival?
+
+```{r}
+pcb_effect <- function(exp_meanlog, exp_sdlog) {
+  exp_surv <- function(pcb) {
+    dlnorm(pcb, exp_meanlog, exp_sdlog) *
+      (1 - combo_mort(pcb))
+  }
+  ns_surv <- integrate(
+    exp_surv,
+    lower = 0, upper = Inf,
+    ## The default rel.tol occasionally gives incorrect results, including one
+    ## set of population parameters that consistently shows an increase in
+    ## survival due to PCB exposure!
+    rel.tol = .Machine$double.eps^0.5
+  )$value
+}
+rv_pcb_effect <- rfun(pcb_effect)
+eff <- rv_pcb_effect(post_ln$pop_meanlog, post_ln$pop_sdlog)
+
+as_draws_df(eff) |>
+  ggplot(aes(x = x)) +
+  geom_density() +
+  scale_x_continuous(
+    name = "Nearshore survival adjustment",
+    labels = scales::percent
+  ) +
+  geom_vline(xintercept = 1, linetype = "dashed") +
+  theme_minimal() +
+  theme(
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank()
+  )
+```
+
+## Puyallup - abundance change
+
+```{r}
+puy_pop <- read_rds("data/puyallup_pop.rds")
+puy0 <- puy_pop$puy0
+puy0_oa <- sum(puy0[2:5])
+puy <- puy_pop$puy
+puy_oa <- rvar_sum(puy[2:5])
+
+as_draws_df(puy_oa) |>
+  ggplot(aes(x = x)) +
+  geom_density() +
+  geom_vline(xintercept = puy0_oa, linetype = "dashed") +
+  labs(x = "Abundance of ocean adults") +
+  theme_minimal() +
+  theme(
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank()
+  )
+```
+
+## Puyallup - relative change
+
+```{r}
+oa_reduction <- (puy_oa - puy0_oa) / puy0_oa
+
+as_draws_df(oa_reduction) |>
+  ggplot(aes(x = x)) +
+  geom_density() +
+  scale_x_continuous(labels = scales::percent) +
+  labs(x = "Relative change in ocean adults") +
+  theme_minimal() +
+  theme(
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank()
+  )
+```
+
+## White - abundance change
+
+```{r}
+white_pop <- read_rds("data/white_pop.rds")
+white0 <- white_pop$white0
+white0_oa <- sum(white0[2:5])
+white <- white_pop$white
+white_oa <- rvar_sum(white[2:5])
+
+as_draws_df(white_oa) |>
+  ggplot(aes(x = x)) +
+  geom_density() +
+  geom_vline(xintercept = white0_oa, linetype = "dashed") +
+  labs(x = "Abundance of ocean adults") +
+  theme_minimal() +
+  theme(
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank()
+  )
+```
+
+## White - relative change
+
+```{r}
+oa_reduction <- (white_oa - white0_oa) / white0_oa
+
+as_draws_df(oa_reduction) |>
+  ggplot(aes(x = x)) +
+  geom_density() +
+  scale_x_continuous(labels = scales::percent) +
+  labs(x = "Relative change in ocean adults") +
+  theme_minimal() +
+  theme(
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank()
+  )
+```
