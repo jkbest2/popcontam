@@ -19,6 +19,26 @@ inv_db2011_survival <- function(survival) {
   (ls + 3.071) / 0.041
 }
 
+mort_reg <- function(pcb, wt_type = c("ww", "lw")) {
+  wt_type <- match.arg(wt_type)
+  if (wt_type == "ww") {
+    eff <- ifelse(
+      pcb < 0.100,
+      0,
+      pmax(0.1894 + 0.2115 * log10(pcb), 0)
+    )
+  } else if (wt_type == "lw") {
+    eff <- ifelse(
+      pcb < 2.2,
+      0,
+      pmax(-0.0934 + 0.2115 * log10(pcb), 0)
+    )
+  } else {
+    stop("wt_type must be \"ww\" for wet weight or \"lw\" for lipid weight")
+  }
+  eff
+}
+
 mort_qreg <- function(pcb, wt_type = "ww") {
   ## Effect threshold is 100 ng/g (ww), so return zero effect below this
   if (wt_type == "ww") {
@@ -32,6 +52,26 @@ mort_qreg <- function(pcb, wt_type = "ww") {
       pcb < 2.2,
       0,
       pmax(-0.1253 + 0.221 * log10(pcb), 0)
+    )
+  } else {
+    stop("wt_type must be \"ww\" for wet weight or \"lw\" for lipid weight")
+  }
+  eff
+}
+
+growth_reg <- function(pcb, wt_type = c("ww", "lw")) {
+  wt_type <- match.arg(wt_type)
+  eff <- if (wt_type == "ww") {
+    ifelse(
+      pcb < 0.100,
+      0,
+      pmax(0.1676 + 0.0758 * log10(pcb), 0)
+    )
+  } else if (wt_type == "lw") {
+    eff <- ifelse(
+      pcb < 2.2,
+      0,
+      pmax(0.06624 + 0.0758 * log10(pcb), 0)
     )
   } else {
     stop("wt_type must be \"ww\" for wet weight or \"lw\" for lipid weight")
@@ -59,17 +99,18 @@ growth_qreg <- function(pcb, wt_type = "ww") {
 }
 
 growth_mort <- function(
-    pcb,
-    base_size = NULL,
-    base_surv = db_size$pred_surv,
-    wt_type = "ww",
-    remove_pcbs = TRUE) {
+  pcb,
+  base_size = NULL,
+  base_surv = db_size$pred_surv,
+  wt_type = "ww",
+  remove_pcbs = TRUE
+) {
   ## If base size is not provided, calculate its value from the provided
   ## survival rate
   base_size <- base_size %||% inv_db2011_survival(base_surv)
 
   ## Calculate the reduction in growth due to PCB exposure.
-  gr_red <- 1 - growth_qreg(pcb, wt_type)
+  gr_red <- 1 - growth_reg(pcb, wt_type)
 
   if (remove_pcbs) {
     exp_size <- base_size
@@ -90,18 +131,19 @@ growth_mort <- function(
 }
 
 combo_surv <- function(
-    pcb,
-    base_size = db_size$july_mass,
-    base_surv = db_size$pred_surv,
-    wt_type = "ww",
-    eff_type = c("combo_surv", "combo_mort", "dir_mort", "gr_mort"),
-    remove_pcbs = TRUE) {
+  pcb,
+  base_size = db_size$july_mass,
+  base_surv = db_size$pred_surv,
+  wt_type = "ww",
+  eff_type = c("combo_surv", "combo_mort", "dir_mort", "gr_mort"),
+  remove_pcbs = TRUE
+) {
   eff_type <- match.arg(eff_type)
   if (remove_pcbs && eff_type != "combo_surv") {
     warning("remove_pcbs only applies to eff_type = \"combo_surv\"")
   }
 
-  dir_mort <- mort_qreg(pcb, wt_type)
+  dir_mort <- mort_reg(pcb, wt_type)
   if (eff_type == "dir_mort") {
     return(dir_mort)
   }
@@ -125,15 +167,16 @@ combo_surv <- function(
 }
 
 pcb_effect <- function(
-    pop_meanlog,
-    pop_sdlog,
-    wt_type,
-    eff_type = c("combo_surv", "combo_mort", "dir_mort", "gr_mort"),
-    base_surv,
-    base_size = NULL,
-    remove_pcbs = TRUE,
-    rel.tol = .Machine$double.eps^0.5,
-    subdivisions = 100) {
+  pop_meanlog,
+  pop_sdlog,
+  wt_type,
+  eff_type = c("combo_surv", "combo_mort", "dir_mort", "gr_mort"),
+  base_surv,
+  base_size = NULL,
+  remove_pcbs = TRUE,
+  rel.tol = .Machine$double.eps^0.5,
+  subdivisions = 100
+) {
   eff_type <- match.arg(eff_type)
   base_size <- base_size %||% inv_db2011_survival(base_surv)
   expected_surv <- function(pcb) {
@@ -149,7 +192,8 @@ pcb_effect <- function(
   }
   integrate(
     expected_surv,
-    lower = 0, upper = Inf,
+    lower = 0,
+    upper = Inf,
     ## The default rel.tol occasionally gives incorrect results, including one
     ## set of population parameters that consistently shows an increase in
     ## survival due to PCB exposure!
