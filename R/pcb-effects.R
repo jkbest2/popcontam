@@ -2,6 +2,9 @@ library(posterior)
 
 source("R/fish-size.R")
 
+eff_mods <- read_rds(here::here("data", "pcb-effect-regressions.rds"))
+
+
 db2011_survival <- function(mass) {
   ## The Duffy and Beauchamp survival regression predicts percent survival. I
   ## prefer to work with survival rates, which are the percent divided by 100.
@@ -19,23 +22,29 @@ inv_db2011_survival <- function(survival) {
   (ls + 3.071) / 0.041
 }
 
-mort_reg <- function(pcb, wt_type = c("ww", "lw")) {
+mort_reg <- function(pcb, wt_type = c("ww", "lw"), bt_lipids = 0.046) {
   wt_type <- match.arg(wt_type)
-  if (wt_type == "ww") {
-    eff <- ifelse(
-      pcb < 0.100,
-      0,
-      pmax(0.1894 + 0.2115 * log10(pcb), 0)
-    )
-  } else if (wt_type == "lw") {
-    eff <- ifelse(
-      pcb < 2.2,
-      0,
-      pmax(-0.0934 + 0.2115 * log10(pcb), 0)
-    )
-  } else {
-    stop("wt_type must be \"ww\" for wet weight or \"lw\" for lipid weight")
+  # Construct design matrix
+  dm <- cbind(1, log10(pcb))
+  # Summarize regression model
+  summ <- eff_mods$summ_mort
+  beta <- rvar_rng(rnorm, 2, summ$coefficients[, 1], summ$coefficients[, 2])
+  if (wt_type == "lw") {
+    # Convert wet weight regression to lipid weight regression
+    beta[1] <- beta[2] * log10(bt_lipids) + beta[1]
   }
+  # Calculate effect
+  eff <- rvar_rng(rnorm, length(pcb), drop(dm %*% beta), summ$sigma)
+  # Zero effect if below threshold
+  if (wt_type == "ww") {
+    eff[pcb < 0.01] <- 0
+  } else {
+    eff[pcb < 2.2] <- 0
+  }
+  # Don't allow effect sizes less than zero.
+  eff <- draws_of(eff) |>
+    pmax(0) |>
+    rvar()
   eff
 }
 
@@ -59,23 +68,29 @@ mort_qreg <- function(pcb, wt_type = "ww") {
   eff
 }
 
-growth_reg <- function(pcb, wt_type = c("ww", "lw")) {
+growth_reg <- function(pcb, wt_type = c("ww", "lw"), bt_lipids = 0.046) {
   wt_type <- match.arg(wt_type)
-  eff <- if (wt_type == "ww") {
-    ifelse(
-      pcb < 0.100,
-      0,
-      pmax(0.1676 + 0.0758 * log10(pcb), 0)
-    )
-  } else if (wt_type == "lw") {
-    eff <- ifelse(
-      pcb < 2.2,
-      0,
-      pmax(0.06624 + 0.0758 * log10(pcb), 0)
-    )
-  } else {
-    stop("wt_type must be \"ww\" for wet weight or \"lw\" for lipid weight")
+  # Construct design matrix
+  dm <- cbind(1, log10(pcb))
+  # Summarize regression model
+  summ <- eff_mods$summ_growth
+  beta <- rvar_rng(rnorm, 2, summ$coefficients[, 1], summ$coefficients[, 2])
+  if (wt_type == "lw") {
+    # Convert wet weight regression to lipid weight regression
+    beta[1] <- beta[2] * log10(bt_lipids) + beta[1]
   }
+  # Calculate effect
+  eff <- rvar_rng(rnorm, length(pcb), drop(dm %*% beta), summ$sigma)
+  # Zero effect if below threshold
+  if (wt_type == "ww") {
+    eff[pcb < 0.01] <- 0
+  } else {
+    eff[pcb < 2.2] <- 0
+  }
+  # Don't allow effect sizes less than zero.
+  eff <- draws_of(eff) |>
+    pmax(0) |>
+    rvar()
   eff
 }
 
@@ -169,7 +184,7 @@ combo_surv <- function(
 pcb_effect <- function(
   pop_meanlog,
   pop_sdlog,
-  wt_type,
+  wt_type = c("ww", "lw"),
   eff_type = c("combo_surv", "combo_mort", "dir_mort", "gr_mort"),
   base_surv,
   base_size = NULL,
@@ -177,10 +192,11 @@ pcb_effect <- function(
   rel.tol = .Machine$double.eps^0.5,
   subdivisions = 100
 ) {
+  wt_type = match.arg(wt_type)
   eff_type <- match.arg(eff_type)
   base_size <- base_size %||% inv_db2011_survival(base_surv)
   expected_surv <- function(pcb) {
-    dlnorm(pcb, pop_meanlog, pop_sdlog) *
+    rfun(dlnorm)(pcb, pop_meanlog, pop_sdlog) *
       combo_surv(
         pcb,
         base_surv = base_surv,
