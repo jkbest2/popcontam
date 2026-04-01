@@ -45,7 +45,7 @@ write_rds(
 
 stilly_eff <- tibble(
   type = c("Wet", "Lipid", "1% Lipid"),
-  eff = c(eff$ww, eff$lw, eff$lw1),
+  eff = c(stilly_eff$ww, stilly_eff$lw, stilly_eff$lw1),
   spawners = c(stilly_sp_ww, stilly_sp_lw, stilly_sp_lw1),
   sp0 = stilly0_sp
 ) |>

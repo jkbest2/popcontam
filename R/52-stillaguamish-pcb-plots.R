@@ -3,17 +3,22 @@ library(posterior)
 library(ggdist)
 library(patchwork)
 
-if (!dir.exists("figs/stillaguamish")) dir.create("figs/stillaguamish")
+if (!dir.exists("figs/stillaguamish")) {
+  dir.create("figs/stillaguamish")
+}
 
 ### Stillaguamish exposures ----------------------------------------------------
 stilly_exp <- read_rds("data/stillaguamish/pcb_exposure.rds") |>
   map(thin_draws, 1)
 
 stilly_ww <- tibble(pcb = seq(0, 0.3, length.out = 1025)) |>
-  mutate(popdens = rfun(dlnorm)(
-    pcb,
-    stilly_exp$ww$pop_meanlog,
-    stilly_exp$ww$pop_sdlog)) |>
+  mutate(
+    popdens = rfun(dlnorm)(
+      pcb,
+      stilly_exp$ww$pop_meanlog,
+      stilly_exp$ww$pop_sdlog
+    )
+  ) |>
   curve_interval(popdens)
 stilly_ww_plt <- stilly_ww |>
   ggplot(aes(x = pcb)) +
@@ -30,10 +35,13 @@ stilly_ww_plt <- stilly_ww |>
   )
 
 stilly_lw <- tibble(pcb = seq(0, 6.6, length.out = 1025)) |>
-  mutate(popdens = rfun(dlnorm)(
-    pcb,
-    stilly_exp$lw$pop_meanlog,
-    stilly_exp$lw$pop_sdlog)) |>
+  mutate(
+    popdens = rfun(dlnorm)(
+      pcb,
+      stilly_exp$lw$pop_meanlog,
+      stilly_exp$lw$pop_sdlog
+    )
+  ) |>
   curve_interval(popdens)
 stilly_lw_plt <- stilly_lw |>
   ggplot(aes(x = pcb)) +
@@ -50,10 +58,13 @@ stilly_lw_plt <- stilly_lw |>
   )
 
 stilly_lw1 <- tibble(pcb = seq(0, 6.6, length.out = 1025)) |>
-  mutate(popdens = rfun(dlnorm)(
-    pcb,
-    stilly_exp$lw1$pop_meanlog,
-    stilly_exp$lw1$pop_sdlog)) |>
+  mutate(
+    popdens = rfun(dlnorm)(
+      pcb,
+      stilly_exp$lw1$pop_meanlog,
+      stilly_exp$lw1$pop_sdlog
+    )
+  ) |>
   curve_interval(popdens)
 stilly_lw1_plt <- stilly_lw1 |>
   ggplot(aes(x = pcb)) +
@@ -75,7 +86,8 @@ ggsave("figs/stillaguamish/stilly_pop_exposure.png", width = 11, height = 8.5)
 
 ## Stillaguamish proportion affected ------------------------------------------
 stilly_aff <- map2(
-  stilly_exp, c(0.1, 2.2, 2.2),
+  stilly_exp,
+  c(0.1, 2.2, 2.2),
   ~ rfun(plnorm)(.y, .x$pop_meanlog, .x$pop_sdlog, lower.tail = FALSE)
 )
 

@@ -58,7 +58,7 @@ write_rds(
 
 white_eff <- tibble(
   type = c("Wet", "Lipid", "1% Lipid"),
-  eff = c(eff$ww, eff$lw, eff$lw1),
+  eff = c(white_eff$ww, white_eff$lw, white_eff$lw1),
   spawners = c(white_sp_ww, white_sp_lw, white_sp_lw1),
   sp0 = white0_sp
 ) |>

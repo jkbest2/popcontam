@@ -56,7 +56,7 @@ write_rds(
 
 puy_eff <- tibble(
   type = c("Wet", "Lipid", "1% Lipid"),
-  eff = c(eff$ww, eff$lw, eff$lw1),
+  eff = c(puy_eff$ww, puy_eff$lw, puy_eff$lw1),
   spawners = c(puy_sp_ww, puy_sp_lw, puy_sp_lw1),
   sp0 = puy0_sp
 ) |>

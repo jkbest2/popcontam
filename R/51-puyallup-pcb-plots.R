@@ -3,18 +3,23 @@ library(posterior)
 library(ggdist)
 library(patchwork)
 
-if (!dir.exists("figs/puyallup")) dir.create("figs/puyallup")
+if (!dir.exists("figs/puyallup")) {
+  dir.create("figs/puyallup")
+}
 
 ### Puyallup exposures ----------------------------------------------------
 puy_exp <- read_rds("data/puyallup/pcb_exposure.rds") |>
   map(thin_draws, 1)
 
 puy_ww <- tibble(pcb = seq(0, 0.3, length.out = 1025)) |>
-  mutate(popdens = rfun(dlnorm)(
-    pcb,
-    puy_exp$ww$pop_meanlog,
-    puy_exp$ww$pop_sdlog)) #|>
-# curve_interval(popdens)
+  mutate(
+    popdens = rfun(dlnorm)(
+      pcb,
+      puy_exp$ww$pop_meanlog,
+      puy_exp$ww$pop_sdlog
+    )
+  ) |>
+  curve_interval(popdens)
 puy_ww_plt <- puy_ww |>
   ggplot(aes(x = pcb)) +
   geom_vline(xintercept = 0.1, linetype = "dashed") +
@@ -30,10 +35,13 @@ puy_ww_plt <- puy_ww |>
   )
 
 puy_lw <- tibble(pcb = seq(0, 6.6, length.out = 1025)) |>
-  mutate(popdens = rfun(dlnorm)(
-    pcb,
-    puy_exp$lw$pop_meanlog,
-    puy_exp$lw$pop_sdlog)) |>
+  mutate(
+    popdens = rfun(dlnorm)(
+      pcb,
+      puy_exp$lw$pop_meanlog,
+      puy_exp$lw$pop_sdlog
+    )
+  ) |>
   curve_interval(popdens)
 puy_lw_plt <- puy_lw |>
   ggplot(aes(x = pcb)) +
@@ -50,10 +58,13 @@ puy_lw_plt <- puy_lw |>
   )
 
 puy_lw1 <- tibble(pcb = seq(0, 6.6, length.out = 1025)) |>
-  mutate(popdens = rfun(dlnorm)(
-    pcb,
-    puy_exp$lw1$pop_meanlog,
-    puy_exp$lw1$pop_sdlog)) |>
+  mutate(
+    popdens = rfun(dlnorm)(
+      pcb,
+      puy_exp$lw1$pop_meanlog,
+      puy_exp$lw1$pop_sdlog
+    )
+  ) |>
   curve_interval(popdens)
 puy_lw1_plt <- puy_lw1 |>
   ggplot(aes(x = pcb)) +
@@ -75,7 +86,8 @@ ggsave("figs/puyallup/puy_pop_exposure.png", width = 11, height = 8.5)
 
 ## Stillaguamish proportion affected ------------------------------------------
 puy_aff <- map2(
-  puy_exp, c(0.1, 2.2, 2.2),
+  puy_exp,
+  c(0.1, 2.2, 2.2),
   ~ rfun(plnorm)(.y, .x$pop_meanlog, .x$pop_sdlog, lower.tail = FALSE)
 )
 
@@ -255,7 +267,8 @@ stilly_gr_eff <- read_rds(
 
 
 eff_df <- expand_grid(
-  river = factor(c("Puyallup", "White", "Stillaguamish"),
+  river = factor(
+    c("Puyallup", "White", "Stillaguamish"),
     levels = c("Puyallup", "White", "Stillaguamish")
   ),
   eff_type = factor(
@@ -269,9 +282,12 @@ eff_df <- expand_grid(
 ) |>
   mutate(
     eff = rvar(c(
-      puy_dm_eff, puy_gr_eff,
-      white_dm_eff, white_gr_eff,
-      stilly_dm_eff, stilly_gr_eff
+      puy_dm_eff,
+      puy_gr_eff,
+      white_dm_eff,
+      white_gr_eff,
+      stilly_dm_eff,
+      stilly_gr_eff
     ))
   )
 
@@ -298,8 +314,11 @@ bind_rows(eff_df, eff_df2) |>
   labs(
     y = "Mortality source",
   ) +
-  guides(color = "none")
-ggsave(here::here("figs", "mort_sources.png"), width = 7.5, height = 5)
+  guides(color = "none") +
+  theme_bw()
+ggsave(
+  here::here("figs", "presentation", "mort_sources.png"),
+  width = 2500, height = 1000, units = "px")
 
 
 # eff_df |>
@@ -317,7 +336,6 @@ ggsave(here::here("figs", "mort_sources.png"), width = 7.5, height = 5)
 #     name = "Proportion of mortality",
 #     labels = scales::percent
 #   )
-
 
 eff_df3 <- eff_df |>
   point_interval(eff) |>
