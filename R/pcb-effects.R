@@ -22,7 +22,7 @@ inv_db2011_survival <- function(survival) {
   (ls + 3.071) / 0.041
 }
 
-mort_reg <- function(pcb, wt_type = c("ww", "lw"), bt_lipids = 0.046) {
+mort_reg_rv <- function(pcb, wt_type = c("ww", "lw"), bt_lipids = 0.046) {
   wt_type <- match.arg(wt_type)
   # Construct design matrix
   dm <- cbind(1, log10(pcb))
@@ -41,10 +41,31 @@ mort_reg <- function(pcb, wt_type = c("ww", "lw"), bt_lipids = 0.046) {
   } else {
     eff[pcb < 2.2] <- 0
   }
-  # Don't allow effect sizes less than zero.
+  # Don't allow effect sizes less than zero or greater than one.
   eff <- draws_of(eff) |>
     pmax(0) |>
+    pmin(1) |>
     rvar()
+  eff
+}
+
+mort_reg <- function(pcb, wt_type = c("ww", "lw")) {
+  wt_type <- match.arg(wt_type)
+  if (wt_type == "ww") {
+    eff <- ifelse(
+      pcb < 0.100,
+      0,
+      pmax(0.1894 + 0.2115 * log10(pcb), 0)
+    )
+  } else if (wt_type == "lw") {
+    eff <- ifelse(
+      pcb < 2.2,
+      0,
+      pmax(-0.0934 + 0.2115 * log10(pcb), 0)
+    )
+  } else {
+    stop("wt_type must be \"ww\" for wet weight or \"lw\" for lipid weight")
+  }
   eff
 }
 
@@ -68,7 +89,7 @@ mort_qreg <- function(pcb, wt_type = "ww") {
   eff
 }
 
-growth_reg <- function(pcb, wt_type = c("ww", "lw"), bt_lipids = 0.046) {
+growth_reg_rv <- function(pcb, wt_type = c("ww", "lw"), bt_lipids = 0.046) {
   wt_type <- match.arg(wt_type)
   # Construct design matrix
   dm <- cbind(1, log10(pcb))
@@ -87,10 +108,31 @@ growth_reg <- function(pcb, wt_type = c("ww", "lw"), bt_lipids = 0.046) {
   } else {
     eff[pcb < 2.2] <- 0
   }
-  # Don't allow effect sizes less than zero.
+  # Don't allow effect sizes less than zero or greater than one.
   eff <- draws_of(eff) |>
     pmax(0) |>
+    pmin(1) |>
     rvar()
+  eff
+}
+
+growth_reg <- function(pcb, wt_type = c("ww", "lw")) {
+  wt_type <- match.arg(wt_type)
+  eff <- if (wt_type == "ww") {
+    ifelse(
+      pcb < 0.100,
+      0,
+      pmax(0.1676 + 0.0758 * log10(pcb), 0)
+    )
+  } else if (wt_type == "lw") {
+    eff <- ifelse(
+      pcb < 2.2,
+      0,
+      pmax(0.06624 + 0.0758 * log10(pcb), 0)
+    )
+  } else {
+    stop("wt_type must be \"ww\" for wet weight or \"lw\" for lipid weight")
+  }
   eff
 }
 
