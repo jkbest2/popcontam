@@ -7,27 +7,26 @@ library(bayesplot)
 
 contam <- read_csv(
   "data/PCB_Puyallup_monitoring_data.csv",
-  col_types =
-    cols(
-      SAMPLE_ID = col_character(),
-      Study_ID = col_character(),
-      Latitude = col_double(),
-      Longitude = col_double(),
-      Species = col_character(),
-      RiverSystem = col_character(),
-      COMPOUND = col_character(),
-      UNIT = col_character(),
-      `CONC_FOUND (ng/g ww)` = col_skip(),
-      `Sampling Date` = col_date(format = "%m/%d/%Y"),
-      `% Lipids` = col_double(),
-      pcb_uggwet = col_double(),
-      pcb_ugglw_sample = col_double(),
-      pcb_ugglw_1 = col_double(),
-      `effect-mort ww` = col_skip(),
-      `effect-mort lipid-sample specific` = col_skip(),
-      `effect-mort lipid - 1%` = col_skip(),
-      Composite_Count = col_double()
-    )
+  col_types = cols(
+    SAMPLE_ID = col_character(),
+    Study_ID = col_character(),
+    Latitude = col_double(),
+    Longitude = col_double(),
+    Species = col_character(),
+    RiverSystem = col_character(),
+    COMPOUND = col_character(),
+    UNIT = col_character(),
+    `CONC_FOUND (ng/g ww)` = col_skip(),
+    `Sampling Date` = col_date(format = "%m/%d/%Y"),
+    `% Lipids` = col_double(),
+    pcb_uggwet = col_double(),
+    pcb_ugglw_sample = col_double(),
+    pcb_ugglw_1 = col_double(),
+    `effect-mort ww` = col_skip(),
+    `effect-mort lipid-sample specific` = col_skip(),
+    `effect-mort lipid - 1%` = col_skip(),
+    Composite_Count = col_double()
+  )
 ) |>
   rename(
     id = SAMPLE_ID,
@@ -60,7 +59,8 @@ gamma_data <- function(contam, conc_col) {
 data_g <- gamma_data(contam, pcb_ug_ww)
 write_rds(data_g, "data/pcb_ww_g_data.rds")
 
-fit_g <- stan("inst/gamma-exposure.stan",
+fit_g <- stan(
+  here::here("inst/gamma-exposure.stan"),
   data = data_g,
   chains = 4,
   iter = 2000
@@ -161,7 +161,7 @@ sim_df |>
 data_sim <- gamma_data(sim_df, conc)
 
 fit_sim <- stan(
-  "gamma-exposure.stan",
+  here::here("inst/gamma-exposure.stan"),
   data = data_sim,
   ## pars = c("shape", "scale"),
   chains = 4,

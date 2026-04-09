@@ -28,27 +28,31 @@ max_sum <- apply(xs, 2, max)
 max_mean <- apply(xm, 2, max)
 
 df_sum_approx <- tibble(n = 1:10) |>
-  mutate(data = map(
-    n,
-    \(i) {
-      tibble(
-        xs = seq(0, max_sum[i], length.out = 1025),
-        ds = dlnorm(xs, pars[[i]][1], pars[[i]][2])
-      )
-    }
-  )) |>
+  mutate(
+    data = map(
+      n,
+      \(i) {
+        tibble(
+          xs = seq(0, max_sum[i], length.out = 1025),
+          ds = dlnorm(xs, pars[[i]][1], pars[[i]][2])
+        )
+      }
+    )
+  ) |>
   unnest(data)
 
 df_mean_approx <- tibble(n = 1:10) |>
-  mutate(data = map(
-    n,
-    \(i) {
-      tibble(
-        xm = seq(0, max_mean[i], length.out = 1025),
-        dm = dlnorm(xm, pars[[i]][1] - log(i), pars[[i]][2])
-      )
-    }
-  )) |>
+  mutate(
+    data = map(
+      n,
+      \(i) {
+        tibble(
+          xm = seq(0, max_mean[i], length.out = 1025),
+          dm = dlnorm(xm, pars[[i]][1] - log(i), pars[[i]][2])
+        )
+      }
+    )
+  ) |>
   unnest(data)
 
 ## Sum plot
@@ -78,27 +82,26 @@ library(ggdist)
 
 contam <- read_csv(
   "data/PCB_Puyallup_monitoring_data.csv",
-  col_types =
-    cols(
-      SAMPLE_ID = col_character(),
-      Study_ID = col_character(),
-      Latitude = col_double(),
-      Longitude = col_double(),
-      Species = col_character(),
-      RiverSystem = col_character(),
-      COMPOUND = col_character(),
-      UNIT = col_character(),
-      `CONC_FOUND (ng/g ww)` = col_skip(),
-      `Sampling Date` = col_date(format = "%m/%d/%Y"),
-      `% Lipids` = col_double(),
-      pcb_uggwet = col_double(),
-      pcb_ugglw_sample = col_double(),
-      pcb_ugglw_1 = col_double(),
-      `effect-mort ww` = col_skip(),
-      `effect-mort lipid-sample specific` = col_skip(),
-      `effect-mort lipid - 1%` = col_skip(),
-      Composite_Count = col_double()
-    )
+  col_types = cols(
+    SAMPLE_ID = col_character(),
+    Study_ID = col_character(),
+    Latitude = col_double(),
+    Longitude = col_double(),
+    Species = col_character(),
+    RiverSystem = col_character(),
+    COMPOUND = col_character(),
+    UNIT = col_character(),
+    `CONC_FOUND (ng/g ww)` = col_skip(),
+    `Sampling Date` = col_date(format = "%m/%d/%Y"),
+    `% Lipids` = col_double(),
+    pcb_uggwet = col_double(),
+    pcb_ugglw_sample = col_double(),
+    pcb_ugglw_1 = col_double(),
+    `effect-mort ww` = col_skip(),
+    `effect-mort lipid-sample specific` = col_skip(),
+    `effect-mort lipid - 1%` = col_skip(),
+    Composite_Count = col_double()
+  )
 ) |>
   rename(
     id = SAMPLE_ID,
@@ -144,7 +147,8 @@ lnorm_data <- function(contam, conc_col) {
 data_ln <- lnorm_data(contam, pcb_ug_ww)
 write_rds(data_ln, "data/pcb_ww_ln_data.rds")
 
-fit_ln <- stan("inst/lnorm-exposure.stan",
+fit_ln <- stan(
+  here::here("inst/lnorm-exposure.stan"),
   data = data_ln,
   chains = 4,
   iter = 2000

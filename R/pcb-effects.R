@@ -238,7 +238,7 @@ pcb_effect <- function(
   eff_type <- match.arg(eff_type)
   base_size <- base_size %||% inv_db2011_survival(base_surv)
   expected_surv <- function(pcb) {
-    rfun(dlnorm)(pcb, pop_meanlog, pop_sdlog) *
+    dlnorm(pcb, pop_meanlog, pop_sdlog) *
       combo_surv(
         pcb,
         base_surv = base_surv,

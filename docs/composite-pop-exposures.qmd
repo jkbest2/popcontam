@@ -55,7 +55,7 @@ $$y_i \sim \operatorname{log\ normal}(\mu, \sigma^2)$$
 $$\frac{1}{N}\sum_{i=1}^N y_i \stackrel{\text{approx}}{\sim} \operatorname{log\ normal}\left(\mu_{(N)}, \sigma^2_{(N)}\right)$$
 
 $$\begin{aligned}
-\sigma^2_{(N)} &= \log\left(\frac{\exp(\sigma^2) - 1)}{N} + 1\right)\\
+\sigma^2_{(N)} &= \log\left(\frac{\exp(\sigma^2) - 1}{N} + 1\right)\\
 \mu_{(N)} &= \mu + \frac{\sigma}{2} - \frac{\sigma_{(N)}}{2}
 \end{aligned}$$
 
@@ -88,7 +88,7 @@ for (n in 2:10) {
 
 ```{r}
 contam <- read_csv(
-  "../data/PCB_Puyallup_monitoring_data.csv",
+  here::here("../data/PCB_Puyallup_monitoring_data.csv"),
   col_types =
     cols(
       SAMPLE_ID = col_character(),

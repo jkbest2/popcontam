@@ -13,7 +13,7 @@ stilly0 <- eq_pop(
 )
 stilly0_sp <- get_spawners(stilly0)
 
-eff <- read_rds("data/stillaguamish/pcb_eff.rds")
+stilly_eff <- read_rds("data/stillaguamish/pcb_eff.rds")
 
 stillaguamish_exposed <- function(ns_surv, stage = NULL) {
   eqp <- eq_pop(

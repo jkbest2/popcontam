@@ -4,7 +4,7 @@ library(ggdist)
 library(patchwork)
 
 if (!dir.exists("figs/puyallup")) {
-  dir.create("figs/puyallup")
+  dir.create("figs/puyallup", recursive = TRUE)
 }
 
 ### Puyallup exposures ----------------------------------------------------
@@ -84,7 +84,7 @@ puy_ww_plt / puy_lw_plt / puy_lw1_plt
 ggsave("figs/puyallup/puy_pop_exposure.pdf", width = 11, height = 8.5)
 ggsave("figs/puyallup/puy_pop_exposure.png", width = 11, height = 8.5)
 
-## Stillaguamish proportion affected ------------------------------------------
+## Puyallup proportion affected ------------------------------------------
 puy_aff <- map2(
   puy_exp,
   c(0.1, 2.2, 2.2),
@@ -318,7 +318,10 @@ bind_rows(eff_df, eff_df2) |>
   theme_bw()
 ggsave(
   here::here("figs", "presentation", "mort_sources.png"),
-  width = 2500, height = 1000, units = "px")
+  width = 2500,
+  height = 1000,
+  units = "px"
+)
 
 
 # eff_df |>
